@@ -81,7 +81,7 @@ do
 			;;
 		--proxy_port)
 			PROXY_PORT=$2
-			shirt2
+			shift 2
 			;;
 		*)
 			if [ -z "$1" ]; then
