@@ -44,7 +44,6 @@ SERVER=""
 TOKEN=""
 PROXY=""
 PROXY_PORT=""
-IS_DEBIAN=""
 OVERWRITE_COLLECTD_CONFIG=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
@@ -404,7 +403,7 @@ DEBIAN)
 	#
 	echo_step "  Checking installation tools"
 	command_exists apt-get || exit_with_failure "Command 'apt-get' not found"
-    command_exists unzip || exit_with_failure "Command 'unzip' not found"
+    command_exists tar || exit_with_failure "Command 'tar' not found"
 	echo_success
 	if command_exists wget; then
 		FETCHER="wget --quiet"
@@ -452,7 +451,7 @@ REDHAT)
     command_exists yum || exit_with_failure "Command 'yum' not found"
     [ -x /sbin/chkconfig ] || exit_with_failure "Command 'chkconfig' not found"
     [ -x /sbin/service ] || exit_with_failure "Command 'service' not found"
-    command_exists unzip || exit_with_failure "Command 'unzip' not found"
+    command_exists tar || exit_with_failure "Command 'tar' not found"
     if command_exists wget; then
         FETCHER="wget --quiet"
     elif command_exists curl; then
@@ -668,22 +667,22 @@ EOF
 	
 	if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
 		if command_exists wget; then
-			FETCHER="wget --quiet -O /tmp/collectd_conf.zip"
+			FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
 		elif command_exists curl; then
-			FETCHER="curl -L --silent -o /tmp/collectd_conf.zip"
+			FETCHER="curl -L --silent -o /tmp/collectd_conf.tar.gz"
 		else
 			exit_with_failure "Either 'wget' or 'curl' are needed"
 		fi
 		echo_step "  Configuring collectd"
-		$FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.zip >>${INSTALL_LOG} 2>&1
+		$FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
 		echo_success
-		echo_step "  Unzipping Configuration Files"
+		echo_step "  Extracting Configuration Files"
 		if [ ! -d "/etc/collectd" ]; then
     	    mkdir -p /etc/collectd
     	fi
-		unzip -o /tmp/collectd_conf.zip -d /etc/collectd >>${INSTALL_LOG} 2>&1
+    	tar -xf /tmp/collectd_conf.tar.gz -C /etc/collectd >>${INSTALL_LOG} 2>&1
 		if [ "$?" != 0 ]; then
-			exit_with_failure "Failed to unzip configuration files"
+			exit_with_failure "Failed to extract configuration files"
 		fi
 		echo_success
 		case $OPERATING_SYSTEM in
