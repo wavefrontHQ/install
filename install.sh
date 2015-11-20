@@ -724,13 +724,9 @@ echo "==========================================================================
 echo "SUCCESS"
 if [ -n "$INSTALL_PROXY" ]; then
 	echo
-	echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly."
-	echo 
-	echo "Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
+	echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
 	echo
-	echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/ or /etc/collectd.d/managed_config/"
-	echo 
-	echo "Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
+	echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
 fi
