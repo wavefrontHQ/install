@@ -657,11 +657,17 @@ EOF
         else
             exit_with_failure "Failed downloading the collectd-ci repo public key"
         fi
-        echo_step "  Installing collectd"
+        echo_step "  Generating yum cache for collectd"
+		echo -e "\nyum -q makecache -y --disablerepo='*' --enablerepo='collectd-ci'" >>${INSTALL_LOG}
+        yum makecache -y --disablerepo='*' --enablerepo='collectd-ci' >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Cleaning yum metadata"
 		echo -e "\nyum -y -q clean metadata" >>${INSTALL_LOG}
-		yum -y -q clean metadata >>${INSTALL_LOG} 2>&1
+		yum -y clean metadata >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Installing collectd"
 		echo -e "\nyum -y -q install collectd" >>${INSTALL_LOG}
-		yum -y -q install collectd >>${INSTALL_LOG} 2>&1
+		yum -y install collectd >>${INSTALL_LOG} 2>&1
 		if [ "$?" != 0 ]; then
 			exit_with_failure "Failed to install collectd"
 		fi
