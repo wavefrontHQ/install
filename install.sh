@@ -80,7 +80,7 @@ do
 			PROXY_PORT=$2
 			shift 2
 			;;
-		-—overwrite_collectd_config)
+		--overwrite_collectd_config)
 			OVERWRITE_COLLECTD_CONFIG="yes"
 			shift
 			;;
