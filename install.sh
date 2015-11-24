@@ -48,6 +48,7 @@ OVERWRITE_COLLECTD_CONFIG=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
+COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 
 while :
 do
@@ -719,6 +720,11 @@ EOF
 			echo_success
 			;;
 		esac
+		echo_step "  Modifying Configuration File at $COLLECTD_WAVEFRONT_CONF_FILE"
+		# Update the configuration file
+		sed -ri s,Host\\s+.*$,"Host \"$PROXY\"",g $COLLECTD_WAVEFRONT_CONF_FILE
+		sed -ri s,Port\\s+.*$,"Port \"$PROXY_PORT\"",g $COLLECTD_WAVEFRONT_CONF_FILE
+		echo_success
 		echo_step "  Restarting collectd"
 		service collectd restart >>${INSTALL_LOG} 2>&1
 		echo_success
