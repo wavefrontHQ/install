@@ -229,6 +229,37 @@ REDHAT_PUBLIC_KEY_FILE="pubkey.asc"
 # Other helpers
 ################################################################################
 
+function ask() {
+    # http://djm.me/ask
+    while true; do
+
+        if [ "${2:-}" = "Y" ]; then
+            prompt="Y/n"
+            default=Y
+        elif [ "${2:-}" = "N" ]; then
+            prompt="y/N"
+            default=N
+        else
+            prompt="y/n"
+            default=
+        fi
+
+        # Ask the question - use /dev/tty in case stdin is redirected from somewhere else
+        read -p "$1 [$prompt] " REPLY </dev/tty
+
+        # Default?
+        if [ -z "$REPLY" ]; then
+            REPLY=$default
+        fi
+
+        # Check if the reply is valid
+        case "$REPLY" in
+            Y*|y*) return 0 ;;
+            N*|n*) return 1 ;;
+        esac
+
+    done
+}
 
 # debug_variables() print all script global variables to ease debugging
 debug_variables() {
@@ -367,10 +398,7 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
 	echo "of machines. If you know the address of an existing proxy and would only want to install"
 	echo "and configure collectd on the current machine, you can skip this step."
 	echo
-	read -p "Do you want to install the Wavefront Proxy? " -n 1 -r
-	echo    # (optional) move to a new line
-	if [[ $REPLY =~ ^[Yy]$ ]]
-	then
+	if ask "Do you want to install the Wavefront Proxy?" Y; then
 		INSTALL_PROXY="yes"
 	fi
 	echo
@@ -384,10 +412,7 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
 	echo "If not already installed, this script will attempt to install collectd for your architecture."
 	echo "Otherwise, the script will attempt to configure collectd to send data to Wavefront."
 	echo
-	read -p "Do you want to install and configure collectd? " -n 1 -r
-	echo    # (optional) move to a new line
-	if [[ $REPLY =~ ^[Yy]$ ]]
-	then
+	if ask "Do you want to install and configure collectd?" Y; then
 		INSTALL_COLLECTD="yes"
 	fi
 	echo_title "Starting installation"
@@ -679,10 +704,7 @@ EOF
 	if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
 		echo
 		echo "We recommend using Wavefront's collectd configuration for initial setup"
-		read -p "Would you like to overwrite any existing collectd configuration? " -n 1 -r
-		echo    # (optional) move to a new line
-		if [[ $REPLY =~ ^[Yy]$ ]]
-		then
+		if ask "Would you like to overwrite any existing collectd configuration? " N; then
 			OVERWRITE_COLLECTD_CONFIG="yes"
 		else
 			echo
