@@ -521,8 +521,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 		get_input "Please enter the Wavefront URL:" "https://metrics.wavefront.com/api/"
 		SERVER=$user_input
 	fi
-	# Squash slashes together then remove the trailing slash.
-	SERVER=$(echo $SERVER | tr -s /)
+	# Remove the trailing slash if it exists.
 	SERVER=${SERVER%/}
 
 	if [ -z "$TOKEN" ]; then
