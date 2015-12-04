@@ -552,7 +552,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	DEBIAN)		
     	echo_step "Installing Wavefront Proxy (Debian) with token: $TOKEN for cluster at: $SERVER"; echo		
     	echo_step "  Setting up Repo"
-		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh | sudo bash >>${INSTALL_LOG} 2>&1
+		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh | bash >>${INSTALL_LOG} 2>&1
 		if [ $? -ne 0 ]; then
 			exit_with_failure "Failed to configure APT repository for Wavefront Proxy"
 		fi
@@ -573,7 +573,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	REDHAT)
 		echo_step "Installing Wavefront Proxy (RedHat) with token: $TOKEN for cluster at: $SERVER"; echo
 		echo_step "  Setting up Repo"
-		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh | sudo bash >>${INSTALL_LOG} 2>&1
+		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh | bash >>${INSTALL_LOG} 2>&1
 		if [ $? -ne 0 ]; then
 			exit_with_failure "Failed to configure YUM repository for Wavefront Proxy"
 		fi
