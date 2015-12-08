@@ -530,7 +530,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	fi
 	echo_step "  Testing token against $SERVER/daemon/test?token=$TOKEN"
 	if command_exists wget; then
-		STATUS=$(wget -O /dev/null $SERVER/daemon/test?token=$TOKEN 2>&1 | grep -F HTTP | cut -d ' ' -f 6)
+		STATUS=$(wget --method=POST -O /dev/null $SERVER/daemon/test?token=$TOKEN 2>&1 | grep -F HTTP | cut -d ' ' -f 6)
 	elif command_exists curl; then
 		STATUS=$(curl -sL -w "%{http_code}" -X POST $SERVER/daemon/test?token=$TOKEN -o /dev/null)
 	fi
