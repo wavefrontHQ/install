@@ -49,6 +49,8 @@ APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
 COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
+PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
+PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
 
 while :
 do
@@ -88,6 +90,11 @@ do
 		--log)
 			INSTALL_LOG=$2
 			shift 2
+			;;
+		--next)
+			PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy-next/script.deb.sh"
+			PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy-next/script.rpm.sh"
+			shift
 			;;
 		*)
 			if [ -z "$1" ]; then
@@ -552,7 +559,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	DEBIAN)		
     	echo_step "Installing Wavefront Proxy (Debian) with token: $TOKEN for cluster at: $SERVER"; echo		
     	echo_step "  Setting up Repo"
-		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh | bash >>${INSTALL_LOG} 2>&1
+		curl -s $PACKAGE_CLOUD_DEB | bash >>${INSTALL_LOG} 2>&1
 		if [ $? -ne 0 ]; then
 			exit_with_failure "Failed to configure APT repository for Wavefront Proxy"
 		fi
@@ -573,7 +580,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	REDHAT)
 		echo_step "Installing Wavefront Proxy (RedHat) with token: $TOKEN for cluster at: $SERVER"; echo
 		echo_step "  Setting up Repo"
-		curl -s https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh | bash >>${INSTALL_LOG} 2>&1
+		curl -s $PACKAGE_CLOUD_RPM | bash >>${INSTALL_LOG} 2>&1
 		if [ $? -ne 0 ]; then
 			exit_with_failure "Failed to configure YUM repository for Wavefront Proxy"
 		fi
