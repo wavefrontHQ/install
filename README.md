@@ -31,9 +31,9 @@ The script is also useful for automatically deploying the Wavefront Proxy or Col
 
 For example, to install the Wavefront Agent without prompting the user for input during the install:
 ```
-sudo bash -c "$(curl -sL https://goo.gl/c70QCx)" -h --proxy --server https://COMPANY_NAME.wavefront.com/api/ --token YOUR_API_TOKEN
+sudo bash -c "$(curl -sL https://goo.gl/c70QCx)" -- --proxy --server https://COMPANY_NAME.wavefront.com/api/ --token YOUR_API_TOKEN
 ```
 For Collectd:
 ```
-sudo bash -c "$(curl -sL https://goo.gl/c70QCx)" -h --collectd --proxy_address localhost --proxy_port 4242 --overwrite_collectd_config
+sudo bash -c "$(curl -sL https://goo.gl/c70QCx)" -- --collectd --proxy_address localhost --proxy_port 4242 --overwrite_collectd_config
 ```
