@@ -535,7 +535,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 		get_input "Please enter your Wavefront token:" ""
 		TOKEN=$user_input
 	fi
-	echo_step "	 Testing token against $SERVER/daemon/test?token=$TOKEN"
+	echo_step "  Testing token against $SERVER/daemon/test?token=$TOKEN"
 	if command_exists curl; then
 		STATUS=$(curl -sL -w "%{http_code}" -X POST $SERVER/daemon/test?token=$TOKEN -o /dev/null)
 	elif command_exists wget; then
