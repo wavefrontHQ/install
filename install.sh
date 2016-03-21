@@ -282,7 +282,7 @@ check_if_supported() {
     case $FLAVOR in
         Ubuntu)
             case $CODENAME in
-                precise|trusty)
+                precise|trusty|xenial)
                     ;;
                 *)
                     exit_with_failure "$MESSAGE"
@@ -462,7 +462,7 @@ DEBIAN)
 		CODENAME=$(cut -d. -f1 /etc/debian_version)
 	fi
 	case "$CODENAME" in
-		precise|trusty)
+		precise|trusty|xenial)
 			FLAVOR="Ubuntu"
 			;;
 		"")
