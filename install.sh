@@ -289,6 +289,15 @@ check_if_supported() {
                     ;;
             esac
             ;;
+        Debian)
+            case $CODENAME in
+                wheezy|jessie|stretch|buster)
+                    ;;
+                *)
+                    exit_with_failure "$MESSAGE"
+                    ;;
+            esac
+            ;;
         CentOS|RHEL)
             case $CODENAME in
                 6)
@@ -464,6 +473,9 @@ DEBIAN)
 	case "$CODENAME" in
 		precise|trusty|xenial)
 			FLAVOR="Ubuntu"
+			;;
+		wheezy|jessie|stretch|buster)
+			FLAVOR="Debian"
 			;;
 		"")
 			exit_with_failure "Unable to detect Debian flavor"
