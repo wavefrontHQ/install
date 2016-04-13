@@ -40,6 +40,7 @@ function usage() {
 # Input arguments
 INSTALL_PROXY=""
 INSTALL_COLLECTD=""
+ALLOW_HTTP=""
 SERVER=""
 TOKEN=""
 PROXY=""
@@ -63,6 +64,10 @@ do
 			;;
 		--collectd)
 			INSTALL_COLLECTD="yes"
+			shift
+			;;
+		--allow_http)
+			ALLOW_HTTP="yes"
 			shift
 			;;
 		--server)
@@ -523,6 +528,10 @@ if [ -n "$INSTALL_PROXY" ]; then
 	fi
 	# Remove the trailing slash if it exists.
 	SERVER=${SERVER%/}
+
+	if [[ ! "$SERVER" =~ ^https ]] && [[ -z "$ALLOW_HTTP" ]]; then
+		exit_with_failure "Refusing to connect to $SERVER since it is not https."
+	fi
 
 	if [ -z "$TOKEN" ]; then
 		get_input "Please enter your Wavefront token:" ""
