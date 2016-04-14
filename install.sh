@@ -311,7 +311,7 @@ check_if_supported() {
             ;;
         AMAZON)
         	case $CODENAME in
-        		2015.09|2015.03|2014.09)
+        		2015.09|2015.03|2014.09|2016.03)
         			CODENAME=6
         			;;
         		*)
