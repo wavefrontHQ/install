@@ -728,6 +728,11 @@ EOF
 		if [ "$?" != 0 ]; then
 			exit_with_failure "Failed to install collectd"
 		fi
+		echo -e "\nyum -y -q install collectd-disk" >>${INSTALL_LOG}
+		yum -y install collectd-disk >>${INSTALL_LOG} 2>&1
+		if [ "$?" != 0 ]; then
+			exit_with_failure "Failed to install collectd-disk"
+		fi
 		echo_success
 		;;
 	esac
