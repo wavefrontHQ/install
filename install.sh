@@ -296,7 +296,7 @@ check_if_supported() {
             ;;
         Debian)
             case $CODENAME in
-                wheezy|jessie|stretch|buster)
+                wheezy|jessie|stretch|buster|7|8|9|10)
                     ;;
                 *)
                     exit_with_failure "$MESSAGE"
@@ -479,7 +479,7 @@ DEBIAN)
 		precise|trusty|xenial)
 			FLAVOR="Ubuntu"
 			;;
-		wheezy|jessie|stretch|buster)
+		wheezy|jessie|stretch|buster|7|8|9|10)
 			FLAVOR="Debian"
 			;;
 		"")
