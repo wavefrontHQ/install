@@ -296,7 +296,7 @@ check_if_supported() {
             ;;
         Debian)
             case $CODENAME in
-                wheezy|jessie|stretch|buster)
+                wheezy|jessie|stretch|buster|7|8|9|10)
                     ;;
                 *)
                     exit_with_failure "$MESSAGE"
@@ -305,6 +305,8 @@ check_if_supported() {
             ;;
         CentOS|RHEL)
             case $CODENAME in
+                5)
+                    ;;
                 6)
                     ;;
                 7)
@@ -479,7 +481,7 @@ DEBIAN)
 		precise|trusty|xenial)
 			FLAVOR="Ubuntu"
 			;;
-		wheezy|jessie|stretch|buster)
+		wheezy|jessie|stretch|buster|7|8|9|10)
 			FLAVOR="Debian"
 			;;
 		"")
@@ -501,6 +503,7 @@ REDHAT)
     command_exists yum || exit_with_failure "Command 'yum' not found"
     [ -x /sbin/chkconfig ] || exit_with_failure "Command 'chkconfig' not found"
     [ -x /sbin/service ] || exit_with_failure "Command 'service' not found"
+    PATH=$PATH:/sbin
     command_exists tar || exit_with_failure "Command 'tar' not found"
     if command_exists wget; then
         FETCHER="wget --quiet"
@@ -541,6 +544,9 @@ REDHAT)
 esac
 
 if [ -n "$INSTALL_PROXY" ]; then
+	if [[ "$FLAVOR/$CODENAME" == "RHEL/5" ]]; then
+		exit_with_failure "Wavefront proxy not yet supported for RHEL/5"
+	fi
 	if [ -z "$SERVER" ]; then
 		get_input "Please enter the Wavefront URL:" "https://metrics.wavefront.com/api/"
 		SERVER=$user_input
@@ -698,6 +704,11 @@ gpgcheck=1
 repo_gpgcheck=1
 priority=9
 EOF
+        if [[ "$CODENAME" == "5" ]]; then
+                # Collectd package for RHEL5 does not support GPG signing.
+	        sed -ri '/gpg/d' /etc/yum.repos.d/collectd-ci.repo
+		echo "gpgcheck=0" >> /etc/yum.repos.d/collectd-ci.repo
+        fi
         else
             exit_with_failure "Package resource directory not found"
         fi
