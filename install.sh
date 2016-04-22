@@ -733,6 +733,11 @@ EOF
 		if [ "$?" != 0 ]; then
 			exit_with_failure "Failed to install collectd-disk"
 		fi
+		echo -e "\nyum -y -q install collectd-netlink" >>${INSTALL_LOG}
+		yum -y install collectd-netlink >>${INSTALL_LOG} 2>&1
+		if [ "$?" != 0 ]; then
+			exit_with_failure "Failed to install collectd-netlink"
+		fi
 		echo_success
 		;;
 	esac
