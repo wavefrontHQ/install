@@ -548,7 +548,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 		exit_with_failure "Wavefront proxy not yet supported for RHEL/5"
 	fi
 	if [ -z "$SERVER" ]; then
-		get_input "Please enter the Wavefront URL:" "https://metrics.wavefront.com/api/"
+		get_input "Please enter the Wavefront URL:" "https://try.wavefront.com/api/"
 		SERVER=$user_input
 	fi
 	# Remove the trailing slash if it exists.
