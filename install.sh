@@ -597,12 +597,6 @@ if [ -n "$INSTALL_PROXY" ]; then
 			exit_with_failure "Failed to install the Wavefront Proxy with APT"
 		fi
 		echo_success
-		echo_step " Starting service"
-		service wavefront-proxy start >>${INSTALL_LOG} 2>&1
-		if [ $? -ne 0 ]; then
-			exit_with_failure "Failed to start the Wavefront Proxy"
-		fi
-		echo_success
 		;;
 	REDHAT)
 		echo_step "Installing Wavefront Proxy (RedHat) with token: $TOKEN for cluster at: $SERVER"; echo
