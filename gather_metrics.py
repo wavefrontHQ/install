@@ -4,6 +4,17 @@ from datetime import datetime
 import cProfile
 import subprocess
 
+REQ_VERSION = (2, 7)
+
+def check_version():
+    cur_version = sys.version_info
+    if cur_version < REQ_VERSION:
+        sys.stderr.write("Your Python interpreter is older "+
+            "than what we have tested, we suggest upgrading "+
+            "to a newer 2.7 version before continuing.\n") 
+        sys.exit()
+
+
 def port_scan(host, port):
     """
     Using ipv4, TCP connection to test whether a port is
@@ -44,40 +55,37 @@ def detect_used_ports():
             sys.stderr.write(".") 
     return open_ports
 
-def write_tcpconns_conf(open_ports):
-    """
-    TODO:
-    -need to check if tcpconn plugin's dependencies are installed
-    -include RemotePort for outbounds connections
-        i.e. the servers we are connecting to
+def detect_applications():
+    """ 
+    Current collectd plugin support:
+    apache, nginx, sqp, postgres, amcq
+    This function uses unix command ps -A and check whether
+    the supported application is listed.
     """
     try:
-        out = open("10-tcpconns.conf", "w")
+        res = subprocess.check_output('ps -A', shell=True, 
+        stderr=subprocess.STDOUT,
+        executable='/bin/bash')
     except:
-        sys.stderr.write("Unable to write tcpcons.conf file\n")
+        print "Unexpected error: ", sys.exe_info()[0]
         sys.exit()
-   
-    out.write('LoadPlugin tcpconns')
-    out.write('<Plugin "tcpconns">\n')
-    out.write('  ListeningPorts false\n')
-    for port in open_ports:
-        out.write('  LocalPort "%d"\n' % port)
 
-    # no remote port yet
-    out.write('</Plugin>\n')
-    out.close()
-
-def detect_applications():
-    output = subprocess.check_output(['ps'], '-A')
-    if 'Httpd' in output:
-        print("Httpd is up and running!")
-
+    if 'apache' in res or 'httpd' in res:
+        print "Has apache"
+    if 'nginx' in res:
+        print "Has nginx"
+    if 'sql' in res:
+        print "Has sql"
+    if 'postgres' in res:
+        print "Has postgres"
+    if 'AMCQ' in res:
+        print "Has AMQP"
 
 if __name__ == "__main__":
     print "Begin port scanning"
     t1 = datetime.now()
     #cProfile.run("detect_used_ports()")
-    #print (detect_used_ports())
-    write_tcpconns_conf(detect_used_ports())
+    print (detect_used_ports())
+    # write_tcpconns_conf(detect_used_ports())
     t2 = datetime.now()
     print "Time took: ", (t2-t1)
