@@ -3,17 +3,19 @@ import sys
 from datetime import datetime
 import cProfile
 import subprocess
+import conf_collectd_plugin as conf
 
+# Python required base version, haven't tested 3 yet.
 REQ_VERSION = (2, 7)
 
 def check_version():
     cur_version = sys.version_info
+    print "Checkng python version"
     if cur_version < REQ_VERSION:
         sys.stderr.write("Your Python interpreter is older "+
             "than what we have tested, we suggest upgrading "+
             "to a newer 2.7 version before continuing.\n") 
         sys.exit()
-
 
 def port_scan(host, port):
     """
@@ -67,11 +69,11 @@ def detect_applications():
         stderr=subprocess.STDOUT,
         executable='/bin/bash')
     except:
-        print "Unexpected error: ", sys.exe_info()[0]
+        print "Unexpected error."
         sys.exit()
 
     if 'apache' in res or 'httpd' in res:
-        print "Has apache"
+        conf.install_apache_plugin()
     if 'nginx' in res:
         print "Has nginx"
     if 'sql' in res:
@@ -82,6 +84,7 @@ def detect_applications():
         print "Has AMQP"
 
 if __name__ == "__main__":
+    """
     print "Begin port scanning"
     t1 = datetime.now()
     #cProfile.run("detect_used_ports()")
@@ -89,3 +92,8 @@ if __name__ == "__main__":
     # write_tcpconns_conf(detect_used_ports())
     t2 = datetime.now()
     print "Time took: ", (t2-t1)
+    """
+    check_version()
+    conf.check_collectd_exists()
+    conf.check_collectd_path()
+    detect_applications()

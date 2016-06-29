@@ -684,11 +684,11 @@ if [ -n "$INSTALL_COLLECTD" ]; then
 		fi
 		echo_step "Installing CollectD (RedHat)"; echo
 		#
-        # Add yum source.
-        #
-        echo_step "  Adding repository"
-        if [ -d /etc/yum.repos.d ]; then
-            cat > /etc/yum.repos.d/collectd-ci.repo <<EOF
+		# Add yum source.
+		#	
+    echo_step "  Adding repository"
+    if [ -d /etc/yum.repos.d ]; then
+        cat > /etc/yum.repos.d/collectd-ci.repo <<EOF
 [collectd-ci]
 name=collectd CI
 baseurl=http://pkg.ci.collectd.org/rpm/collectd-5.5/epel-$CODENAME-$ARCHITECTURE
@@ -698,40 +698,40 @@ gpgcheck=1
 repo_gpgcheck=1
 priority=9
 EOF
-        if [[ "$CODENAME" == "5" ]]; then
-                # Collectd package for RHEL5 does not support GPG signing.
-	        sed -ri '/gpg/d' /etc/yum.repos.d/collectd-ci.repo
-		echo "gpgcheck=0" >> /etc/yum.repos.d/collectd-ci.repo
-        fi
-        else
-            exit_with_failure "Package resource directory not found"
-        fi
-        echo_success
-        echo_step "  Downloading the collectd-ci repo public key"
-        echo -e "\n$FETCHER ${REDHAT_REPOSITORY}/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
+    if [[ "$CODENAME" == "5" ]]; then
+        # Collectd package for RHEL5 does not support GPG signing.
+        sed -ri '/gpg/d' /etc/yum.repos.d/collectd-ci.repo
+        echo "gpgcheck=0" >> /etc/yum.repos.d/collectd-ci.repo
+    fi
+    else
+        exit_with_failure "Package resource directory not found"
+    fi
+    echo_success
+    echo_step "  Downloading the collectd-ci repo public key"
+    echo -e "\n$FETCHER ${REDHAT_REPOSITORY}/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
         $FETCHER ${REDHAT_REPOSITORY}/${REDHAT_PUBLIC_KEY_FILE} >>${INSTALL_LOG} 2>&1
-        if [ -s "$REDHAT_PUBLIC_KEY_FILE" ]; then
-            mkdir -p /etc/pki/rpm-gpg
-            mv ${REDHAT_PUBLIC_KEY_FILE} /etc/pki/rpm-gpg/
-    		echo -e "\nrpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
-            rpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE} >>${INSTALL_LOG} 2>&1
-            echo_success
-        else
-            exit_with_failure "Failed downloading the collectd-ci repo public key"
-        fi
-        echo_step "  Generating yum cache for collectd"
-		echo -e "\nyum -q makecache -y --disablerepo='*' --enablerepo='collectd-ci'" >>${INSTALL_LOG}
-        yum makecache -y --disablerepo='*' --enablerepo='collectd-ci' >>${INSTALL_LOG} 2>&1
+    if [ -s "$REDHAT_PUBLIC_KEY_FILE" ]; then
+        mkdir -p /etc/pki/rpm-gpg
+        mv ${REDHAT_PUBLIC_KEY_FILE} /etc/pki/rpm-gpg/
+        echo -e "\nrpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
+        rpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE} >>${INSTALL_LOG} 2>&1
         echo_success
-        echo_step "  Cleaning yum metadata"
+    else
+        exit_with_failure "Failed downloading the collectd-ci repo public key"
+    fi
+    echo_step "  Generating yum cache for collectd"
+		echo -e "\nyum -q makecache -y --disablerepo='*' --enablerepo='collectd-ci'" >>${INSTALL_LOG}
+    yum makecache -y --disablerepo='*' --enablerepo='collectd-ci' >>${INSTALL_LOG} 2>&1
+    echo_success
+    echo_step "  Cleaning yum metadata"
 		echo -e "\nyum -y -q clean metadata" >>${INSTALL_LOG}
 		yum -y clean metadata >>${INSTALL_LOG} 2>&1
-        echo_success
-        echo_step "  Installing collectd"
+    echo_success
+    echo_step "  Installing collectd"
 		echo -e "\nyum -y -q install collectd" >>${INSTALL_LOG}
 		yum -y install collectd >>${INSTALL_LOG} 2>&1
 		if [ "$?" != 0 ]; then
-			exit_with_failure "Failed to install collectd"
+        exit_with_failure "Failed to install collectd"
 		fi
 		echo -e "\nyum -y -q install collectd-disk" >>${INSTALL_LOG}
 		yum -y install collectd-disk >>${INSTALL_LOG} 2>&1
@@ -746,57 +746,39 @@ EOF
 		echo_success
 		;;
 	esac
-	
-	if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
-		echo
-		echo "We recommend using Wavefront's collectd configuration for initial setup"
-		if ask "Would you like to overwrite any existing collectd configuration? " N; then
-			OVERWRITE_COLLECTD_CONFIG="yes"
-		else
-			echo
-			echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
-			echo "Manual setup is required"
-			echo
-		fi
-	fi
-	
-	if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
-		if command_exists wget; then
-			FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
-		elif command_exists curl; then
-			FETCHER="curl -L --silent -o /tmp/collectd_conf.tar.gz"
-		else
-			exit_with_failure "Either 'wget' or 'curl' are needed"
-		fi
-		echo_step "  Configuring collectd"
-		$FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
-		echo_success
-		echo_step "  Extracting Configuration Files"
-		if [ ! -d "/etc/collectd" ]; then
-    	    mkdir -p /etc/collectd
-    	fi
-    	tar -xf /tmp/collectd_conf.tar.gz -C /etc/collectd >>${INSTALL_LOG} 2>&1
-		if [ "$?" != 0 ]; then
-			exit_with_failure "Failed to extract configuration files"
-		fi
-		echo_success
-		case $OPERATING_SYSTEM in
-		REDHAT)
-			echo_step "  Overwriting collectd.conf"	
-			mv /etc/collectd.conf /etc/collectd.conf.bak
-			mv /etc/collectd/collectd.conf /etc/collectd.conf
-			echo_success
-			;;
-		esac
-		echo_step "  Modifying Configuration File at $COLLECTD_WAVEFRONT_CONF_FILE"
-		# Update the configuration file
-		sed -ri s,Host\\s+.*$,"Host \"$PROXY\"",g $COLLECTD_WAVEFRONT_CONF_FILE
-		sed -ri s,Port\\s+.*$,"Port \"$PROXY_PORT\"",g $COLLECTD_WAVEFRONT_CONF_FILE
-		echo_success
-		echo_step "  Restarting collectd"
-		service collectd restart >>${INSTALL_LOG} 2>&1
-		echo_success
-	fi
+fi
+
+if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
+    echo
+    echo "We recommend using Wavefront's collectd configuration for initial setup"
+    if ask "Would you like to overwrite any existing collectd configuration? " N; then
+        OVERWRITE_COLLECTD_CONFIG="yes"
+    else
+        echo
+        echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
+        echo "Manual setup is required"
+        echo
+    fi
+fi
+
+if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+    python gather_metrics.py
+    case $OPERATING_SYSTEM in
+    REDHAT)
+        echo_step "  Overwriting collectd.conf"	
+        mv /etc/collectd.conf /etc/collectd.conf.bak
+        mv /etc/collectd/collectd.conf /etc/collectd.conf
+        echo_success
+        ;;
+    esac
+    echo_step "  Modifying Configuration File at $COLLECTD_WAVEFRONT_CONF_FILE"
+    # Update the configuration file
+    sed -ri s,Host\\s+.*$,"Host \"$PROXY\"",g $COLLECTD_WAVEFRONT_CONF_FILE
+    sed -ri s,Port\\s+.*$,"Port \"$PROXY_PORT\"",g $COLLECTD_WAVEFRONT_CONF_FILE
+    echo_success
+    echo_step "  Restarting collectd"
+    service collectd restart >>${INSTALL_LOG} 2>&1
+    echo_success
 fi
 
 echo
