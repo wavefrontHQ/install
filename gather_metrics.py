@@ -4,6 +4,7 @@ from datetime import datetime
 import cProfile
 import subprocess
 import conf_collectd_plugin as conf
+import install_utils as utils
 
 # Python required base version, haven't tested 3 yet.
 REQ_VERSION = (2, 7)
@@ -83,6 +84,11 @@ def detect_applications():
     if 'AMCQ' in res:
         print "Has AMQP"
 
+def check_fqdn():
+    ret = utils.call_command("hostname -f > /dev/null")
+    if ret != 0:
+        utils.exit_with_message("Fail to resolve fqdn!")
+
 if __name__ == "__main__":
     """
     print "Begin port scanning"
@@ -96,4 +102,5 @@ if __name__ == "__main__":
     check_version()
     conf.check_collectd_exists()
     conf.check_collectd_path()
+    check_fqdn()
     detect_applications()

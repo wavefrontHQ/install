@@ -17,7 +17,7 @@ function usage() {
 	echo
 	echo "USAGE"
 	echo "====="
-	echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config"
+	echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config | --app_configure"
 	echo
 	echo "    --proxy"
 	echo "          Installs the Wavefront Proxy"
@@ -34,6 +34,8 @@ function usage() {
 	echo "          The proxy port to send collectd data to."
 	echo "    --overwrite_collectd_config"
 	echo "          Overwrite existing collectd configurations in /etc/collectd/"
+  echo "    --app_configure"
+  echo "          To launch the interactive app detection installation process"
 	echo
 }
 
@@ -46,6 +48,7 @@ TOKEN=""
 PROXY=""
 PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
+APP_CONFIGURE=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
@@ -66,6 +69,7 @@ do
 			;;
 		--collectd)
 			INSTALL_COLLECTD="yes"
+      APP_CONFIGURE="yes"
 			shift
 			;;
 		--allow_http)
@@ -92,6 +96,10 @@ do
 			OVERWRITE_COLLECTD_CONFIG="yes"
 			shift
 			;;
+    --app_configure)
+      APP_CONFIGURE="yes"
+      shift
+      ;;
 		--log)
 			INSTALL_LOG=$2
 			shift 2
@@ -437,6 +445,7 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
 	echo
 	if ask "Do you want to install and configure collectd?" Y; then
 		INSTALL_COLLECTD="yes"
+    APP_CONFIGURE="yes"
 	fi
 	echo_title "Starting installation"
 else
@@ -629,6 +638,11 @@ if [ -n "$INSTALL_PROXY" ]; then
 	else
 		sed -ri s,^token.*,token=$TOKEN,g $CONF_FILE
 	fi
+
+	if [ $? -ne 0 ]; then
+		exit_with_failure "Failed to write to configuration file at $CONF_FILE"
+	fi
+
 	echo_success
 	# Start the service.
 	echo_step "  Starting Service"
@@ -762,7 +776,26 @@ if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
 fi
 
 if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
-    python gather_metrics.py
+    if command_exists wget; then
+        FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
+    elif command_exists curl; then
+        FETCHER="curl -L --silent -o /tmp/collectd_conf.tar.gz"
+    else
+        exit_with_failure "Either 'wget' or 'curl' are needed"
+    fi
+    echo_step "  Configuring collectd"
+    $FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
+    echo_success
+    echo_step "  Extracting Configuration Files"
+    if [ ! -d "/etc/collectd" ]; then
+        mkdir -p /etc/collectd
+    fi
+    tar -xf /tmp/collectd_conf.tar.gz -C /etc/collectd >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to extract configuration files"
+        fi
+    echo_success
+
     case $OPERATING_SYSTEM in
     REDHAT)
         echo_step "  Overwriting collectd.conf"	
@@ -771,6 +804,7 @@ if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
         echo_success
         ;;
     esac
+    
     echo_step "  Modifying Configuration File at $COLLECTD_WAVEFRONT_CONF_FILE"
     # Update the configuration file
     sed -ri s,Host\\s+.*$,"Host \"$PROXY\"",g $COLLECTD_WAVEFRONT_CONF_FILE
@@ -781,9 +815,53 @@ if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo_success
 fi
 
+if [ -z "$APP_CONFIGURE" ]; then
+    if ask "Would you like to configure collectd based on your installed app? " Y; then
+        APP_CONFIGURE="yes"
+    else:
+        echo
+        echo "Keeping the default configuration"
+        echo
+    fi
+fi
+
+if [ -n "$APP_CONFIGURE" ]; then
+    if command_exists wget; then
+        FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
+    elif command_exists curl; then
+        FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
+    else
+        exit_with_failure "Either 'wget' or 'curl' are needed"
+    fi
+    echo_step "  Pulling configuration file"
+    $FETCHER https://github.com/kentwang929/install/files/344013/app_configure.tar.gz >>${INSTALL_LOG} 2>&1
+    echo_success
+    echo_step "  Extracting Configuration Files"
+    if [ ! -d "/tmp/app_configure" ]; then
+        mkdir -p /tmp/app_configure
+    fi
+    tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
+    if [ "$?" != 0 ]; then
+        exit_with_failure "Failed to extract configuration files"
+    fi
+    echo_success
+    if command_exists wget; then
+        python /tmp/app_configure/install/gather_metrics.py
+    else
+        exit_with_failure "Python is needed to enable the app configure installation"
+    fi
+fi
+
+if [ "$?" == 0 ]; then
+
+echo_step "  Restarting collectd"
+service collectd restart >>${INSTALL_LOG} 2>&1
+echo_success
 echo
 echo "======================================================================================="
 echo "SUCCESS"
+fi
+
 if [ -n "$INSTALL_PROXY" ]; then
 	echo
 	echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."

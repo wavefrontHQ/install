@@ -194,9 +194,8 @@ def install_apache_plugin():
         if ret == 0:
             utils.print_success()
             print "Apache_plugin has been written successfully."
-            print ""
-            utils.call_command("service collectd restart")
-            print ""
+            sys.stdout.write( "wavefront_apache.conf can be found at %s.\n" % 
+            COLLECTD_CONF_DIR )
             sys.stdout.write("To check if this plugin has been successfully, "
                   "please check if apache. is included in your "
                   "browse metric page.\n")
@@ -307,6 +306,3 @@ if __name__ == "__main__":
     print COLLECTD_HOME
     print COLLECTD_CONF_DIR
     print "Curls command: ", utils.command_exists("curl")
-    
-    url = raw_input("Enter a url to check:\n")
-    check_apache_server_status(url)
