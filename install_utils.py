@@ -1,5 +1,4 @@
-import sys
-import os
+import sys, os
 import subprocess
 
 # input/output utils
@@ -61,7 +60,6 @@ def get_input(prompt, default=None):
 # converted from one line script utils to python callable
 
 def print_warn(msg):
-    print ""
     call_command("tput setaf 3") # 3 = yellow
     sys.stdout.write("[ WARNING ]\n")
     call_command("tput sgr0")
@@ -91,7 +89,7 @@ def print_right(msg):
 
 def exit_with_message(msg):
     sys.stderr.write(msg+"\n")
-    sys.exit()
+    sys.exit(1)
 
 def exit_with_failrue(msg):
     print_failure()

@@ -1,22 +1,24 @@
 import socket
-import sys
+import sys, getopt
 from datetime import datetime
-import cProfile
 import subprocess
+
 import conf_collectd_plugin as conf
 import install_utils as utils
+import config
 
 # Python required base version, haven't tested 3 yet.
 REQ_VERSION = (2, 7)
 
 def check_version():
     cur_version = sys.version_info
-    print "Checkng python version"
+    utils.print_step("  Checking python version")
     if cur_version < REQ_VERSION:
         sys.stderr.write("Your Python interpreter is older "+
             "than what we have tested, we suggest upgrading "+
             "to a newer 2.7 version before continuing.\n") 
         sys.exit()
+    utils.print_success()
 
 def port_scan(host, port):
     """
@@ -84,11 +86,6 @@ def detect_applications():
     if 'AMCQ' in res:
         print "Has AMQP"
 
-def check_fqdn():
-    ret = utils.call_command("hostname -f > /dev/null")
-    if ret != 0:
-        utils.exit_with_message("Fail to resolve fqdn!")
-
 if __name__ == "__main__":
     """
     print "Begin port scanning"
@@ -102,5 +99,13 @@ if __name__ == "__main__":
     check_version()
     conf.check_collectd_exists()
     conf.check_collectd_path()
-    check_fqdn()
-    detect_applications()
+    if len(sys.argv) > 1:
+        config.INSTALL_LOG = sys.argv[1]
+    else:
+        config.INSTALL_LOG = "/dev/null"
+    try:
+        conf.print_log()
+        detect_applications()
+    except KeyboardInterrupt:
+        sys.stderr.write("\nQuitting the installer via keyboard interrupt.")
+        sys.exit(1)

@@ -35,7 +35,7 @@ function usage() {
 	echo "    --overwrite_collectd_config"
 	echo "          Overwrite existing collectd configurations in /etc/collectd/"
   echo "    --app_configure"
-  echo "          To launch the interactive app detection installation process"
+  echo "          Launch the interactive application detection installer"
 	echo
 }
 
@@ -49,6 +49,7 @@ PROXY=""
 PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
 APP_CONFIGURE=""
+APP_FINISHED=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
@@ -628,19 +629,19 @@ if [ -n "$INSTALL_PROXY" ]; then
 	esac
 	echo_step "  Modifying Configuration File at $CONF_FILE"
 	# Update the configuration file
-	if grep -q ^#server $CONF_FILE; then
-		sed -ri s,^#server.*,server=$SERVER,g $CONF_FILE
-	else
-		sed -ri s,^server.*,server=$SERVER,g $CONF_FILE
-	fi
-	if grep -q ^#token $CONF_FILE; then
-		sed -ri s,^#token.*,token=$TOKEN,g $CONF_FILE
-	else
-		sed -ri s,^token.*,token=$TOKEN,g $CONF_FILE
-	fi
-
-	if [ $? -ne 0 ]; then
-		exit_with_failure "Failed to write to configuration file at $CONF_FILE"
+	if [ -f $CONF_FILE ]; then
+      if grep -q ^#server $CONF_FILE; then
+          sed -ri s,^#server.*,server=$SERVER,g $CONF_FILE
+      else
+          sed -ri s,^server.*,server=$SERVER,g $CONF_FILE
+      fi
+      if grep -q ^#token $CONF_FILE; then
+          sed -ri s,^#token.*,token=$TOKEN,g $CONF_FILE
+      else
+          sed -ri s,^token.*,token=$TOKEN,g $CONF_FILE
+      fi
+  else
+      exit_with_failure "Failed to locate $CONF_FILE"
 	fi
 
 	echo_success
@@ -776,6 +777,11 @@ if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
 fi
 
 if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+    hostname -f > /dev/null
+    if [ "$?" != 0 ]; then
+        exit_with_failure "Failed to resolve FDQN"
+    fi
+
     if command_exists wget; then
         FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
     elif command_exists curl; then
@@ -816,9 +822,10 @@ if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
 fi
 
 if [ -z "$APP_CONFIGURE" ]; then
+    echo
     if ask "Would you like to configure collectd based on your installed app? " Y; then
         APP_CONFIGURE="yes"
-    else:
+    else
         echo
         echo "Keeping the default configuration"
         echo
@@ -833,8 +840,8 @@ if [ -n "$APP_CONFIGURE" ]; then
     else
         exit_with_failure "Either 'wget' or 'curl' are needed"
     fi
-    echo_step "  Pulling configuration file"
-    $FETCHER https://github.com/kentwang929/install/files/344013/app_configure.tar.gz >>${INSTALL_LOG} 2>&1
+    echo_step "  Pulling application configuration file"
+    $FETCHER https://github.com/kentwang929/install/files/348741/app_configure.tar.gz >>${INSTALL_LOG} 2>&1
     echo_success
     echo_step "  Extracting Configuration Files"
     if [ ! -d "/tmp/app_configure" ]; then
@@ -845,15 +852,17 @@ if [ -n "$APP_CONFIGURE" ]; then
         exit_with_failure "Failed to extract configuration files"
     fi
     echo_success
-    if command_exists wget; then
-        python /tmp/app_configure/install/gather_metrics.py
+    if command_exists python; then
+        python /tmp/app_configure/install/gather_metrics.py ${INSTALL_LOG}
+        if [ "$?" == 0 ]; then
+            APP_FINISHED="yes"
+        fi
     else
         exit_with_failure "Python is needed to enable the app configure installation"
     fi
 fi
 
-if [ "$?" == 0 ]; then
-
+if [ -n "$APP_FINISHED" ]; then
 echo_step "  Restarting collectd"
 service collectd restart >>${INSTALL_LOG} 2>&1
 echo_success
@@ -866,7 +875,7 @@ if [ -n "$INSTALL_PROXY" ]; then
 	echo
 	echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
-if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ] && [ -n "$APP_FINISHED" ]; then
 	echo
 	echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
 fi
