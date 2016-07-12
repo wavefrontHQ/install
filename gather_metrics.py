@@ -19,6 +19,7 @@ import sys
 import getopt
 from datetime import datetime
 import subprocess
+import re
 
 import conf_collectd_plugin as conf
 import install_utils as utils
@@ -26,7 +27,7 @@ import config
 
 # Python required base version
 REQ_VERSION = (2, 7)
-
+DEBUG = True
 
 def check_version():
     cur_version = sys.version_info
@@ -53,16 +54,27 @@ def port_scan(host, port):
     except socket.error:
         return False
     except KeyboardInterrupt:
-        print 'Scanning interrupted'
+        utils.cprint('Scanning interrupted')
         sys.exit()
     except socket.gaierror:
-        print 'Hostname could not be resolved'
+        utils.cprint('Hostname could not be resolved')
         sys.exit()
     else:
         return port
     finally:
         sock.close()
 
+
+def check_app(output, app):
+    app_re = re.search(r' ({app})\n'.format(app=app), output.decode())
+    if DEBUG:
+        pattern = r' ({app})\n'.format(app=app)
+        utils.eprint(pattern)
+
+    if app_re is None:
+        return False
+    else:
+        return True
 
 def detect_used_ports():
     """
@@ -88,8 +100,12 @@ def detect_applications():
     apache.
     Want: nginx, sql, postgres, amcq
     This function uses unix command ps -A and check whether
-    the supported application is listed.
+    the supported application is found.
     """
+
+    support_list = ['apache2|httpd', 'nginx', 'mysqld']
+
+    utils.eprint('Begin app detection')
 
     try:
         res = subprocess.check_output(
@@ -97,20 +113,32 @@ def detect_applications():
             stderr=subprocess.STDOUT,
             executable='/bin/bash')
     except:
-        print 'Unexpected error.'
+        sys.stderr.write('Unexpected error.')
         sys.exit(1)
 
-    if 'apache' in res or 'httpd' in res:
-        conf.install_apache_plugin()
-    if 'nginx' in res:
-        print 'Has nginx'
-    if 'sql' in res:
-        print 'Has sql'
-    if 'postgres' in res:
-        print 'Has postgres'
-    if 'AMCQ' in res:
-        print 'Has AMCQ'
+    # if b'apache' in res or b'httpd' in res:
+    #    conf.install_apache_plugin()
 
+    for app in support_list:
+        if check_app(res, app):
+            utils.cprint('{} is supported.'.format(app))
+
+
+    """
+    need apache to regex search list
+     - one dict for regex
+     - one dict for instantiate
+
+    instantiate dynamically?
+
+    """
+
+
+def comp():
+    try:
+        utils.input = utils.raw_input
+    except NameError:
+        pass
 
 if __name__ == '__main__':
     check_version()
