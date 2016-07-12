@@ -1,12 +1,25 @@
+from __future__ import print_function
+
 import sys
 import os
 import subprocess
+import random
+import string
 
+def cinput(*args, **kwargs):
+    cm = sys.modules[__name__]
+
+    try:
+        cm.input = raw_input
+    except NameError:
+        pass
+
+    return input(*args, **kwargs)
 
 # input/output utils
 def ask(question, default='yes'):
     """
-    Ask a yes/no question via raw_input() and return their answer.
+    Ask a yes/no question via input() and return their answer.
 
     source: http://stackoverflow.com/questions/3041986/python-command-line-yes-no-input
     "question" is a string that is presented to the user.
@@ -32,7 +45,7 @@ def ask(question, default='yes'):
 
     while True:
         sys.stdout.write(question + prompt)
-        choice = raw_input().lower().strip()
+        choice = cinput().lower().strip()
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
@@ -53,13 +66,13 @@ def get_input(prompt, default=None):
             '{prompt} (default: {})').format(default, prompt=prompt)
 
     while user_input == '':
-        user_input = raw_input(prompt + '\n').strip()
+        user_input = cinput(prompt + '\n').strip()
 
         if user_input == '':
             if default is not None:
                 user_input = default
             else:
-                print 'The value cannot be blank.'
+                print('The value cannot be blank.')
 
     return user_input
 
@@ -146,9 +159,12 @@ def get_command_output(command):
 
 
 # utils using os
-def check_path_exists(path, expand=False):
-    if(expand):
+def check_path_exists(path, expand=False, debug=False):
+    if expand:
         path = os.path.expanduser(path)
+
+    if debug:
+        eprint('Checking {}'.format(path))
 
     return os.path.exists(path)
 
@@ -167,11 +183,29 @@ def get_http_status(url):
     status_cmd = 'curl --head -s ' + url + ' | head -n 1'
     return get_command_output(status_cmd)
 
+
+def cprint(*args, **kwargs):
+    print(*args, **kwargs)
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def random_string(length):
+    pool = string.ascii_letters + string.digits
+    return ''.join(random.choice(pool) for i in range(length))
+
+
 if __name__ == '__main__':
     print_warn('This is for testing install_utils.py')
+
+    cinput("testing enter")
     ask('Begin testing')
-    print call_command('ls > /dev/null')
-    print command_exists('python')
+    print(call_command('ls > /dev/null'))
+    print(command_exists('python'))
     print_step('Next step is')
     print_warn('REALLY long text'*10)
     get_input('just checking:', 'default')
+    eprint(random_string(64))
+    print(check_path_exists('/var/run/mysqld/mysqld.sock'))

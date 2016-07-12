@@ -46,12 +46,12 @@ def check_collectd_conf_dir():
     """
     res = utils.check_path_exists(COLLECTD_CONF_DIR)
     if not res:
-        print 'Creating collectd managed config dir'
+        utils.cprint('Creating collectd managed config dir')
         utils.call_command('mkdir ' + COLLECTD_CONF_DIR)
 
 
 def check_install_state(plugin):
-    print ('Cannot check install state yet.')
+    utils.cprint('Cannot check install state yet.')
     return False
 
 
@@ -119,7 +119,6 @@ def apache_title():
 
 def install_apache_plugin():
     install = check_install_state('Apache')
-    print
     if not install:
         sys.stdout.write(
             'This script has detected that you have apache installed and '
@@ -128,7 +127,7 @@ def install_apache_plugin():
             'Would you like to run the apache plugin installer to '
             'enable collectd to collect data from apache?')
     else:
-        print 'You have previously installed this plugin.'
+        utils.cprint('You have previously installed this plugin.')
         res = utils.ask(
             'Would you like to reinstall this plugin?', default='no')
 
@@ -136,7 +135,7 @@ def install_apache_plugin():
         return
 
     apache_title()
-    print
+    utils.cprint()
     sys.stdout.write(
         'To enable collectd plugin with Apache, the following '
         'steps need to be taken:\n'
@@ -144,7 +143,7 @@ def install_apache_plugin():
         '2. ExtendedStatus needs to be turned on.  (Default is off)\n'
         '3. Enable the server-status handler for each virtual host.\n')
 
-    _ = raw_input('Press Enter to continue')
+    _ = utils.cinput('Press Enter to continue')
     utils.print_step('Begin collectd Apache plugin installer')
 
     # check point
@@ -168,7 +167,7 @@ def install_apache_plugin():
         if ret != 0:
             utils.exit_with_message('a2enmod command was not found')
     utils.print_success()
-    print
+    utils.cprint()
     sys.stdout.write(
         'In order to enable the apache plugin with collectd, the '
         'ExtendedStatus setting must be turned on.\n'
@@ -177,8 +176,7 @@ def install_apache_plugin():
 
     sys.stdout.write(
         'If you have already enabled this status, '
-        'answer "no" to the next question '
-        'and ignore the following warning.\n'
+        'answer "no" to the next question.\n'
         'If you would like us to enable this status, answer "yes" and we will '
         'include a extendedstatus.conf file in your apache folder.\n')
 
@@ -196,8 +194,8 @@ def install_apache_plugin():
             utils.print_success()
             include_apache_es_conf(conf_dir)
             sys.stdout.write(
-                '\nextendedstatus.conf is now included in the ' +
-                conf_dir + ' dir.\n')
+                'extendedstatus.conf is now included in the '
+                '{0} dir.\n'.format(conf_dir))
             utils.print_step('Restarting apache')
             ret = utils.call_command(
                 'service apache2 restart >> ' +
@@ -209,13 +207,9 @@ def install_apache_plugin():
             exit_with_message(conf_dir + ' dir does not exist, ' +
                               'please consult support@wavefront.com' +
                               'for help.')
-    else:
-        utils.print_warn(
-            'Collectd plugin will not work with apache if the '
-            'ExtendedStatus is not turned on.')
 
     # Begin writing apache plugin
-    print
+    utils.cprint()
     utils.print_step('Begin writing apache plugin for collectd')
     plugin_file = 'wavefront_temp_apache.conf'
     out = utils.write_file(plugin_file)
@@ -248,7 +242,7 @@ def install_apache_plugin():
 
         if ret == 0:
             utils.print_success()
-            print 'Apache_plugin has been written successfully.'
+            utils.cprint('Apache_plugin has been written successfully.')
             sys.stdout.write(
                 'wavefront_apache.conf can be found at %s.\n' %
                 COLLECTD_CONF_DIR)
@@ -325,7 +319,7 @@ def write_apache_plugin(out):
         url = utils.get_input(
             'Please enter the url that contains your ' +
             'server-status (ex: www.apache.org/server_status):')
-        print
+        utils.cprint()
         utils.print_step('Checking http response for %s' % url)
         res = utils.get_command_output('curl -s -i '+url)
 
@@ -360,9 +354,9 @@ def write_apache_plugin(out):
                     utils.ask(
                         'Would you like to record this url anyway?', 'no')
                 else:
-                    print res
+                    utils.cprint(res)
                     res = utils.ask('Is this the correct status to monitor?')
-                    print
+                    utils.cprint()
                     if res:
                         count = count + 1
                         server_list.append(url)
@@ -380,11 +374,10 @@ def write_apache_plugin(out):
 
 
 def print_log():
-    print 'Using {}'.format(config.INSTALL_LOG)
+    utils.cprint('Using {}'.format(config.INSTALL_LOG))
 
 
 if __name__ == '__main__':
-    utils.warn('This is for testing conf_collected_plugin.py')
-    print COLLECTD_HOME
-    print COLLECTD_CONF_DIR
-    print 'Curls command: ', utils.command_exists('curl')
+    utils.print_warn('This is for testing conf_collected_plugin.py')
+    utils.cprint(COLLECTD_HOME)
+    utils.cprint(COLLECTD_CONF_DIR)
