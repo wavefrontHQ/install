@@ -77,12 +77,28 @@ def get_input(prompt, default=None):
     return user_input
 
 
+def string_to_num(s):
+    try:
+        num = int(s)
+    except ValueError:
+        return None
+        
+    return num
+
+
+
 # helper functions converted from one line script utils to python callable
 def print_warn(msg):
     call_command('tput setaf 3')  # 3 = yellow
     sys.stdout.write('[ WARNING ]\n')
     call_command('tput sgr0')
     sys.stderr.write(msg + '\n')
+
+
+def print_reminder(msg):
+    call_command('tput setaf 5')  # 
+    sys.stderr.write(msg + '\n')
+    call_command('tput sgr0')
 
 
 def print_failure():
@@ -111,7 +127,7 @@ def print_right(msg):
 
 
 def exit_with_message(msg):
-    sys.stderr.write(msg + '\n')
+    eprint(msg)
     sys.exit(1)
 
 
