@@ -16,10 +16,11 @@ with return code of 1.
 
 import socket
 import sys
-import getopt
 from datetime import datetime
-import subprocess
 import re
+import importlib
+import json
+import collections
 
 import conf_collectd_plugin as conf
 import install_utils as utils
@@ -27,7 +28,6 @@ import config
 
 # Python required base version
 REQ_VERSION = (2, 7)
-DEBUG = True
 
 def check_version():
     cur_version = sys.version_info
@@ -67,7 +67,7 @@ def port_scan(host, port):
 
 def check_app(output, app):
     app_re = re.search(r' ({app})\n'.format(app=app), output.decode())
-    if DEBUG:
+    if config.DEBUG:
         pattern = r' ({app})\n'.format(app=app)
         utils.eprint(pattern)
 
@@ -96,49 +96,131 @@ def detect_used_ports():
 
 def detect_applications():
     """
+    Detect and install appropriate collectd plugin
+
     Current collectd plugin support:
-    apache.
-    Want: nginx, sql, postgres, amcq
+    apache, mysql.
+    Want: nginx, postgres, amcq
     This function uses unix command ps -A and check whether
     the supported application is found.
+
+    support_dict = 
+      {
+        'APP_NAME': 
+            { APP_SEARCH: search_name,
+              MODULE: module_name,
+              CLASSNAME: installer_name,
+              CONF_NAME: plugin_conf_filename
+            }
+      },
+
+    [Q]uit to quit
+    detected
+      1. app1
+      2. app2
+      3. app3
+      4. app4
+
+    installer flow:
+      1. show selections
+      2. installs a plugin
+      3. updates install state
+      4. menu changes with install state
     """
 
-    support_list = ['apache2|httpd', 'nginx', 'mysqld']
-
+    plugins_file = 'support_plugins.json'
     utils.eprint('Begin app detection')
 
+    res = utils.get_command_output('ps -A')
+    if res is None:
+        utils.exit_with_message('Unable to read process off the machine')
+
     try:
-        res = subprocess.check_output(
-            'ps -A', shell=True,
-            stderr=subprocess.STDOUT,
-            executable='/bin/bash')
-    except:
-        sys.stderr.write('Unexpected error.')
-        sys.exit(1)
+        data_file = open(plugins_file)
+    except (IOError, OSError) as e:
+        utils.exit_with_message(e)
+    except Exception:
+        utils.exit_with_message('Unexpected error.')
 
-    # if b'apache' in res or b'httpd' in res:
-    #    conf.install_apache_plugin()
+    data = json.load(data_file)
+    support_dict = collections.OrderedDict(data['data'])
+    support_list = []
 
-    for app in support_list:
-        if check_app(res, app):
-            utils.cprint('{} is supported.'.format(app))
+    for app in support_dict:
+        if check_app(res, support_dict[app]['app_search']):
+            support_list.append(app)
+    utils.cprint(support_list) 
+   
 
+    if len(support_list):
+        installer_menu(support_list, support_dict)
+    else:
+        utils.cprint('No supported app plugin is detected')
+        sys.exit(0)
 
     """
-    need apache to regex search list
-     - one dict for regex
-     - one dict for instantiate
-
-    instantiate dynamically?
-
+    MyClass = getattr(importlib.import_module("mysql_plugin"),
+        "MySQLInstaller")
+    instance = MyClass('testing')
+    instance.install()
     """
 
 
-def comp():
-    try:
-        utils.input = utils.raw_input
-    except NameError:
-        pass
+def installer_menu(o_list, support_dict):
+    """
+    """
+    exit_cmd = [
+        'quit', 'q', 'exit']
+
+    res = None
+    utils.cprint()
+    utils.print_reminder(    
+        'We have detected the following applications that are '
+        'supported by our collectd installers.')
+
+    while res not in exit_cmd:
+        utils.cprint()
+        utils.cprint('The following are the available installers')
+        for i, app in enumerate(o_list):
+            utils.cprint(
+                '({i}) {app} installer'.format(i=i, app=app))
+        utils.cprint()
+        utils.cprint(
+            'To pick a installer, type in the corresponding number '
+            'next to the installer.\n'
+            'To quit out of this installer, type "[Q]uit" or "exit".')
+        res = utils.get_input(
+            'Which installer would you like to run?').lower()
+        if res not in exit_cmd:
+            option = check_option(res, len(o_list))
+            if option is not None:
+                utils.cprint(
+                    'You have selected ({option}) {app} installer'.format(
+                        option=option, app=o_list[option]))
+                confirm = utils.ask('Would you like to proceed with '
+                    'the installer?')
+                if confirm:
+                    app = support_dict[o_list[option]]
+                    Installer = getattr(
+                        importlib.import_module(app['module']),
+                        app['class_name'])
+                    instance = Installer('Debian', app['conf_name'])
+                    instance.install()
+            else:
+                utils.print_reminder('Invalid option.')
+
+def check_option(option, max_length):
+   """
+   sanitize input
+   check if it is out of range, num.
+   """
+   res = utils.string_to_num(option)
+   if res is None:
+      return None
+       
+   if res < 0 or res >= max_length:
+      return None
+   return res
 
 if __name__ == '__main__':
     check_version()
@@ -152,7 +234,6 @@ if __name__ == '__main__':
         config.INSTALL_LOG = '/dev/null'
 
     try:
-        conf.print_log()
         detect_applications()
     except KeyboardInterrupt:
         sys.stderr.write('\nQuitting the installer via keyboard interrupt.')

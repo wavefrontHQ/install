@@ -1,0 +1,27 @@
+{
+  "_comment": {
+      "standard_format": "see below",
+      "APP_NAME": {
+          "APP_SEARCH": "search_name",
+          "MODULE": "module_name",
+          "CLASSNAME": "installer_name",
+          "CONF_NAME": "plugin_conf_filename"
+      }
+  },
+  "data": {
+      "mysql": 
+      {
+          "app_search": "mysqld",
+          "module": "mysql_plugin",
+          "class_name": "MySQLInstaller",
+          "conf_name": "wavefront_mysql.conf"
+      },
+      "apache":
+      {
+          "app_search": "apache2|httpd",
+          "module": "apache_plugin",
+          "class_name": "ApacheInstaller",
+          "conf_name": "wavefront_apache.conf"
+      }
+  }
+}

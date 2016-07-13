@@ -8,8 +8,12 @@ import config
 
 
 class MySQLInstaller(inst.PluginInstaller):
-    def __init__(self, conf_name):
-        self.conf_name = 'wavefront_mysql.conf'
+    def __init__(self, os, conf_name):
+        super(MySQLInstaller, self).__init__(os)
+        self.conf_name = conf_name
+
+    def get_conf_name(self):
+       return self.conf_name
 
     def title(self):
         art = (
@@ -207,5 +211,5 @@ class MySQLInstaller(inst.PluginInstaller):
 
 
 if __name__ == '__main__':
-    sql = MySQLInstaller('wavefront_mysql.conf')
+    sql = MySQLInstaller('Debian', 'wavefront_mysql.conf')
     sql.install()

@@ -1,16 +1,20 @@
 import install_utils as utils
+import config
 
 
 COLLECTD_HOME = '/etc/collectd'
 COLLECTD_CONF_DIR = COLLECTD_HOME + '/managed_config'
 
 
-class PluginInstaller():
+class PluginInstaller(object):
     """
     The interface for installers
 
 
     """
+    def __init__(self, os):
+        self.os = os
+
     def title(self):
         raise NotImplementedError()  
 
@@ -21,6 +25,9 @@ class PluginInstaller():
         raise NotImplementedError()  
 
     def write_plugin(self, out):
+        raise NotImplementedError()  
+
+    def support_os(self, os):
         raise NotImplementedError()  
 
     def clean_plugin_write(self):
@@ -74,7 +81,19 @@ class PluginInstaller():
         utils.call_command('rm {}'.format(temp_file))
 
     def install(self):
-        self.title()
-        self.overview()
-        self.check_dependency()
-        self.clean_plugin_write()
+        if config.DEBUG:
+            self.title()
+            self.overview()
+            self.check_dependency()
+            self.clean_plugin_write()
+        else:
+            try:
+                self.title()
+                self.overview()
+                self.check_dependency()
+                self.clean_plugin_write()
+            except:
+                utils.eprint('{} was not finished.'.format(self.__class__.__name__))
+                return False
+
+            return True
