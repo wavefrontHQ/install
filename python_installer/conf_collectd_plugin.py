@@ -7,12 +7,6 @@ import config
 COLLECTD_HOME = '/etc/collectd'
 COLLECTD_CONF_DIR = COLLECTD_HOME + '/managed_config'
 
-# http response header
-NOT_AUTH = 401
-NOT_FOUND = 404
-HTTP_OK = 200
-INVALID_URL = -1
-
 
 def check_collectd_exists():
     utils.print_step('  Checking if collectd exists')

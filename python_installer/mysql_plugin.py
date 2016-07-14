@@ -13,7 +13,7 @@ class MySQLInstaller(inst.PluginInstaller):
         self.conf_name = conf_name
 
     def get_conf_name(self):
-       return self.conf_name
+        return self.conf_name
 
     def title(self):
         art = (
