@@ -132,7 +132,10 @@ class MySQLInstaller(inst.PluginInstaller):
 
         count = 0
         db_list = []
-        default_socket_path = '/var/run/mysqld/mysqld.sock'
+        if self.os == config.DEBIAN:
+          default_socket_path = '/var/run/mysqld/mysqld.sock'
+        if self.os == config.REDHAT:
+          default_socket_path = '/var/lib/mysql/mysql.sock'
 
         while utils.ask('Would you like to add a DB server to monitor?'):
             db = utils.get_input(

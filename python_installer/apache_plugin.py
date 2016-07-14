@@ -52,18 +52,29 @@ class ApacheInstaller(inst.PluginInstaller):
         # Assumption:
         # -latest apache2 is installed and the installation
         # -directory is in the default place
-        utils.print_step('  Checking if mod_status is enabled')
-        cmd_res = utils.get_command_output('ls /etc/apache2/mods-enabled')
-        if 'status.conf' not in cmd_res or 'status.load' not in cmd_res:
-            utils.print_step('Enabling apache2 mod_status module.')
-            ret = utils.call_command('sudo a2enmod status')
-            if ret != 0:
-                utils.exit_with_message('a2enmod command was not found')
-        utils.print_success()
+        if self.os == config.DEBIAN:
+            utils.print_step('  Checking if mod_status is enabled')
+            cmd_res = utils.get_command_output('ls /etc/apache2/mods-enabled')
+            if 'status.conf' not in cmd_res or 'status.load' not in cmd_res:
+                utils.print_step('Enabling apache2 mod_status module.')
+                ret = utils.call_command('sudo a2enmod status')
+                if ret != 0:
+                    utils.exit_with_message('a2enmod command was not found')
+            utils.print_success()
+        elif self.os == config.REDHAT:
+            utils.cprint()
+            utils.cprint(
+                'To enable server status page for the apache web, '
+                'ensure that mod_status.so module is enabled. '
+                'This module is often enabled by default.\n'
+                '"LoadModule status_module modules/mod_status.so"\n'
+                'such line should be included in one of the conf files.')
+            _ = utils.cinput('Press Enter to continue.')
+
         utils.cprint()
         utils.cprint(
-            'In order to enable the apache plugin with collectd, the '
-            'ExtendedStatus setting must be turned on.\n'
+            'In order to fully utilize the apache plugin with collectd, '
+            'the ExtendedStatus setting needs be turned on.\n'
             'This setting can be turned on by having "ExtendedStatus on" '
             'in one of the .conf file.\n')
 
@@ -79,8 +90,15 @@ class ApacheInstaller(inst.PluginInstaller):
             'the ExtendedStatus?')
 
         if res:
-            # include the config file in /apache2/conf-enabled
-            conf_dir = '/etc/apache2/conf-enabled'
+            # dir changes depending on the system
+            # tested on Ubuntu 14.04, RHEL 7.2 
+            if self.os == config.DEBIAN:
+                conf_dir = '/etc/apache2/conf-enabled'
+                app_name = 'apache2'
+            elif self.os == config.REDHAT:
+                conf_dir = '/etc/httpd/conf.modules.d'
+                app_name = 'httpd'
+
             utils.print_step('Checking if ' + conf_dir + ' exists.')
             if utils.check_path_exists(conf_dir):
                 # pull config file here
@@ -91,16 +109,20 @@ class ApacheInstaller(inst.PluginInstaller):
                     '{0} dir.\n'.format(conf_dir))
                 utils.print_step('Restarting apache')
                 ret = utils.call_command(
-                    'service apache2 restart >> ' +
-                    config.INSTALL_LOG + ' 2>&1')
+                    'service {app_name} restart >> '
+                    '{log} 2>&1'.format(
+                        app_name=app_name,
+                        log=config.INSTALL_LOG))
                 if ret != 0:
                     utils.exit_with_message(
                         'Failed to restart apache service.')
                 utils.print_success()
             else:
-                exit_with_message(conf_dir + ' dir does not exist, ' +
-                                  'please consult support@wavefront.com' +
-                                  'for help.')
+                exit_with_message(
+                    '{cond_dir} dir does not exist. Manual '
+                    'set up is required. For help, please '
+                    'consule support@wavefront.com'.format(
+                        conf_dir=conf_dir))
 
     def write_plugin(self, out):
         utils.print_step('Begin writing apache plugin for collectd')
@@ -181,7 +203,6 @@ class ApacheInstaller(inst.PluginInstaller):
                                 '  </Instance>\n').format(instance=sv_name,
                                                           url=url_auto)
                             out.write(plugin_instance)
-
         out.write('</Plugin>\n')
         return count
 
@@ -249,5 +270,6 @@ class ApacheInstaller(inst.PluginInstaller):
           'for the .conf file of your server.\n')
 
 if __name__ == '__main__':
-    apache = ApacheInstaller('Debian', 'wavefront_apache.conf')
+    apache = ApacheInstaller('REDHAT', 'wavefront_apache.conf')
+    config.INSTALL_LOG = '/dev/null'
     apache.install()
