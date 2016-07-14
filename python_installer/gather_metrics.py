@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 The main module file that will be invoked by the one line installer.
 
@@ -28,6 +27,7 @@ import config
 
 # Python required base version
 REQ_VERSION = (2, 7)
+
 
 def check_version():
     cur_version = sys.version_info
@@ -76,6 +76,7 @@ def check_app(output, app):
     else:
         return True
 
+
 def detect_used_ports():
     """
     Scan through localhost 0-1024 ports
@@ -104,32 +105,15 @@ def detect_applications():
     This function uses unix command ps -A and check whether
     the supported application is found.
 
-    support_dict = 
-      {
-        'APP_NAME': 
-            { APP_SEARCH: search_name,
-              MODULE: module_name,
-              CLASSNAME: installer_name,
-              CONF_NAME: plugin_conf_filename
-            }
-      },
-
-    [Q]uit to quit
-    detected
-      1. app1
-      2. app2
-      3. app3
-      4. app4
-
     installer flow:
       1. show selections
       2. installs a plugin
-      3. updates install state
-      4. menu changes with install state
+      3. updates install state (not yet implemented)
+      4. menu changes with install state (not yet implemented)
     """
 
-    plugins_file = 'support_plugins.json'
-    utils.eprint('Begin app detection')
+    plugins_file = '/tmp/app_configure/support_plugins.json'
+    utils.print_step('Begin app detection')
 
     res = utils.get_command_output('ps -A')
     if res is None:
@@ -149,11 +133,9 @@ def detect_applications():
     for app in support_dict:
         if check_app(res, support_dict[app]['app_search']):
             support_list.append(app)
-    utils.cprint(support_list) 
-   
 
     if len(support_list):
-        installer_menu(support_list, support_dict)
+        return (support_list, support_dict)
     else:
         utils.cprint('No supported app plugin is detected')
         sys.exit(0)
@@ -168,19 +150,21 @@ def detect_applications():
 
 def installer_menu(o_list, support_dict):
     """
+    provide the menu and prompts for the user to interact with the installer
     """
     exit_cmd = [
         'quit', 'q', 'exit']
 
     res = None
     utils.cprint()
-    utils.print_reminder(    
+    utils.print_color_msg(
         'We have detected the following applications that are '
-        'supported by our collectd installers.')
+        'supported by our collectd installers.', utils.GREEN)
 
     while res not in exit_cmd:
         utils.cprint()
-        utils.cprint('The following are the available installers')
+        utils.print_color_msg(
+            'The following are the available installers', utils.GREEN)
         for i, app in enumerate(o_list):
             utils.cprint(
                 '({i}) {app} installer'.format(i=i, app=app))
@@ -197,7 +181,8 @@ def installer_menu(o_list, support_dict):
                 utils.cprint(
                     'You have selected ({option}) {app} installer'.format(
                         option=option, app=o_list[option]))
-                confirm = utils.ask('Would you like to proceed with '
+                confirm = utils.ask(
+                    'Would you like to proceed with '
                     'the installer?')
                 if confirm:
                     app = support_dict[o_list[option]]
@@ -209,18 +194,18 @@ def installer_menu(o_list, support_dict):
             else:
                 utils.print_reminder('Invalid option.')
 
+
 def check_option(option, max_length):
-   """
-   sanitize input
-   check if it is out of range, num.
-   """
-   res = utils.string_to_num(option)
-   if res is None:
-      return None
-       
-   if res < 0 or res >= max_length:
-      return None
-   return res
+    """
+    check if option is a num or if it is out of range
+    """
+    res = utils.string_to_num(option)
+    if res is None:
+        return None
+
+    if res < 0 or res >= max_length:
+        return None
+    return res
 
 if __name__ == '__main__':
     check_version()
@@ -228,13 +213,20 @@ if __name__ == '__main__':
     conf.check_collectd_path()
 
     # the first argument will be the log file
-    if len(sys.argv) > 1:
-        config.INSTALL_LOG = sys.argv[1]
-    else:
+    arg_len = len(sys.argv)
+    if arg_len == 3:
+        config.OPERATING_SYSTEM = sys.argv[1]
+        config.INSTALL_LOG = sys.argv[2]
+    elif arg_len == 1:
         config.INSTALL_LOG = '/dev/null'
+    else:
+        utils.eprint('Invalid arguments.')
+        sys.exit(1)
+
+    (s_list, s_dict) = detect_applications()
 
     try:
-        detect_applications()
+        installer_menu(s_list, s_dict)
     except KeyboardInterrupt:
-        sys.stderr.write('\nQuitting the installer via keyboard interrupt.')
+        utils.eprint('\nQuitting the installer via keyboard interrupt.')
         sys.exit(1)

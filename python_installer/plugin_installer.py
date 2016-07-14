@@ -10,25 +10,35 @@ class PluginInstaller(object):
     """
     The interface for installers
 
-
+    The following methods need to be implemented
+      title():
+          - the ascii art for the installer
+      overview():
+          - general description about what the installer does
+      check_depedency()
+          - check plugin and installer's dependency
+      write_plugin():
+          - write the actual plugin file
+      support_os():
+          - whether debian or redhat is supported
     """
     def __init__(self, os):
         self.os = os
 
     def title(self):
-        raise NotImplementedError()  
+        raise NotImplementedError()
 
     def overview(self):
-        raise NotImplementedError()  
+        raise NotImplementedError()
 
     def check_dependency(self):
-        raise NotImplementedError()  
+        raise NotImplementedError()
 
     def write_plugin(self, out):
-        raise NotImplementedError()  
+        raise NotImplementedError()
 
     def support_os(self, os):
-        raise NotImplementedError()  
+        raise NotImplementedError()
 
     def clean_plugin_write(self):
         """
@@ -70,7 +80,8 @@ class PluginInstaller(object):
                 utils.print_success()
                 utils.cprint('MySQL plugin has been written successfully.')
                 utils.cprint(
-                    '{0} can be found at {1}.'.format(self.conf_name,
+                    '{0} can be found at {1}.'.format(
+                        self.conf_name,
                         COLLECTD_CONF_DIR))
             else:
                 utils.call_command('rm {}'.format(temp_file))
@@ -81,6 +92,7 @@ class PluginInstaller(object):
         utils.call_command('rm {}'.format(temp_file))
 
     def install(self):
+        # doing so allow python to complain
         if config.DEBUG:
             self.title()
             self.overview()
@@ -93,7 +105,9 @@ class PluginInstaller(object):
                 self.check_dependency()
                 self.clean_plugin_write()
             except:
-                utils.eprint('{} was not finished.'.format(self.__class__.__name__))
+                utils.eprint(
+                    '{} was not installed successfully.'.format(
+                        self.__class__.__name__))
                 return False
 
             return True

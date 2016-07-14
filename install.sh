@@ -828,11 +828,59 @@ EOF
         service collectd restart >>${INSTALL_LOG} 2>&1
         echo_success
     fi
+
+    if [ -z "$APP_CONFIGURE" ]; then
+        echo
+        if ask "Would you like to configure collectd based on your installed app? " Y; then
+            APP_CONFIGURE="yes"
+        else
+            echo
+            echo "Keeping the default configuration"
+            echo
+        fi
+    fi
+
+    if [ -n "$APP_CONFIGURE" ]; then
+        if command_exists wget; then
+            FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
+        elif command_exists curl; then
+            FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
+        else
+            exit_with_failure "Either 'wget' or 'curl' are needed"
+        fi
+        echo_step "  Pulling application configuration file"
+        APP_LOCATION="https://github.com/kentwang929/install/files/362830/app_configure.tar.gz"
+        $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Extracting Configuration Files"
+        if [ ! -d "/tmp/app_configure" ]; then
+            mkdir -p /tmp/app_configure
+        fi
+        tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to extract configuration files"
+        fi
+        echo_success
+        if command_exists python; then
+            python /tmp/app_configure/gather_metrics.py ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            if [ "$?" == 0 ]; then
+                APP_FINISHED="yes"
+            fi
+        else
+            exit_with_failure "Python is needed to enable the app configure installation"
+        fi
+    fi
+
 fi
 
-echo
-echo "======================================================================================="
-echo "SUCCESS"
+if [ -n "$APP_FINISHED" ]; then
+    echo_step "  Restarting collectd"
+    service collectd restart >>${INSTALL_LOG} 2>&1
+    echo_success
+    echo
+    echo "======================================================================================="
+    echo "SUCCESS"
+fi
 
 if [ -n "$INSTALL_PROXY" ]; then
     echo

@@ -2,10 +2,10 @@
   "_comment": {
       "standard_format": "see below",
       "APP_NAME": {
-          "APP_SEARCH": "search_name",
-          "MODULE": "module_name",
-          "CLASSNAME": "installer_name",
-          "CONF_NAME": "plugin_conf_filename"
+          "app_search": "search_name",
+          "module": "module_name",
+          "class_name": "installer_name",
+          "conf_name": "plugin_conf_filename"
       }
   },
   "data": {

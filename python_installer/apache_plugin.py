@@ -2,6 +2,14 @@ import re
 
 import install_utils as utils
 import plugin_installer as inst
+import config
+
+# http response header
+NOT_AUTH = 401
+NOT_FOUND = 404
+HTTP_OK = 200
+INVALID_URL = -1
+
 
 class ApacheInstaller(inst.PluginInstaller):
     def __init__(self, os, conf_name):
@@ -22,21 +30,21 @@ class ApacheInstaller(inst.PluginInstaller):
         utils.cprint(
             'To enable collectd plugin with Apache, the following '
             'steps need to be taken:\n'
-            '1. mod_status for apache needs to be enabled. (Default is enabled)\n'
+            '1. mod_status for apache needs to be enabled. '
+            '(Default is enabled)\n'
             '2. ExtendedStatus needs to be turned on.  (Default is off)\n'
             '3. Enable the server-status handler for each virtual host.\n')
 
         _ = utils.cinput('Press Enter to continue')
         utils.print_step('Begin collectd Apache plugin installer')
-        
 
     def check_dependency(self):
-       # check point
-        #  - check dependency
-        #  - change system file
-        #  - check mod status
-        #  - TODO: pull template
-        #  - prompt for user information
+        """
+        Apache checklist:
+        - check curl
+        - mod_status
+        - extended status
+        """
         if not utils.command_exists('curl'):
             utils.exit_with_failure('Curl is needed for this plugin.')
 
@@ -62,14 +70,14 @@ class ApacheInstaller(inst.PluginInstaller):
         utils.cprint(
             'If you have already enabled this status, '
             'answer "no" to the next question.\n'
-            'If you would like us to enable this status, answer "yes" and we will '
+            'If you would like us to enable this status, '
+            'answer "yes" and we will '
             'include a extendedstatus.conf file in your apache folder.\n')
 
         res = utils.ask(
             'Would you like us to enable '
             'the ExtendedStatus?')
 
-        # missing the flow where user wants to turn on the setting themselves.
         if res:
             # include the config file in /apache2/conf-enabled
             conf_dir = '/etc/apache2/conf-enabled'
@@ -86,7 +94,8 @@ class ApacheInstaller(inst.PluginInstaller):
                     'service apache2 restart >> ' +
                     config.INSTALL_LOG + ' 2>&1')
                 if ret != 0:
-                    utils.exit_with_message('Failed to restart apache service.')
+                    utils.exit_with_message(
+                        'Failed to restart apache service.')
                 utils.print_success()
             else:
                 exit_with_message(conf_dir + ' dir does not exist, ' +
@@ -100,15 +109,25 @@ class ApacheInstaller(inst.PluginInstaller):
 
         count = 0
         server_list = []
+        sv_list = []
 
         self.apache_plugin_usage()
         utils.cprint(
-            'To check whether the server-status page is working, please visit\n'
+            'To check whether the server-status page is working, '
+            'please visit\n'
             '\tyour-server-name/server-status\n'
             'It should look similar to\n'
             '\tapache.org/server-status\n')
 
         while utils.ask('Would you like to add a server to monitor?'):
+            sv_name = utils.get_input(
+                'How would you like to name this server?')
+
+            if sv_name in sv_list:
+                utils.cprint('You have already used {}.'.format(
+                    sv_name))
+                continue
+
             url = utils.get_input(
                 'Please enter the url that contains your ' +
                 'server-status (ex: www.apache.org/server_status):')
@@ -142,34 +161,34 @@ class ApacheInstaller(inst.PluginInstaller):
                         utils.print_warn(
                             'The url you have provided '
                             'does not seem to be the correct server_status '
-                            'page.  Incorrect server-status will not be recorded '
-                            'by collectd.')
+                            'page.  Incorrect server-status will not be '
+                            'recorded by collectd.')
                         utils.ask(
                             'Would you like to record this url anyway?', 'no')
                     else:
                         utils.cprint(res)
-                        res = utils.ask('Is this the correct status to monitor?')
+                        res = utils.ask(
+                            'Is this the correct status to monitor?')
                         utils.cprint()
                         if res:
                             count = count + 1
                             server_list.append(url)
-                            instance = 'apache%d' % count
+                            sv_list.append(sv_name)
                             url_auto = url+'?auto'
                             plugin_instance = (
                                 '  <Instance "{instance}">\n'
                                 '    URL "{url}"\n'
-                                '  </Instance>\n').format(instance=instance,
+                                '  </Instance>\n').format(instance=sv_name,
                                                           url=url_auto)
                             out.write(plugin_instance)
 
         out.write('</Plugin>\n')
         return count
 
-    def check_http_response(http_res):
+    def check_http_response(self, http_res):
         http_status_re = re.match('HTTP/1.1 (\d* [\w ]*)\s', http_res)
         if http_status_re is None:
-            utils.print_warn('Invalid http response header!')
-            sys.exit(1)
+            return INVALID_URL
 
         http_code = http_status_re.group(1)
 
@@ -182,8 +201,7 @@ class ApacheInstaller(inst.PluginInstaller):
         else:
             return INVALID_URL
 
-
-    def check_apache_server_status(payload):
+    def check_apache_server_status(self, payload):
         atitle_re = re.search(
             r'(<head>[\w\W\s]*<title>Apache '
             'Status</title>[\w\W\s]*</head>)([\w\W\s]*)', payload)
@@ -199,7 +217,7 @@ class ApacheInstaller(inst.PluginInstaller):
 
         return None
 
-    def include_apache_es_conf(conf_dir):
+    def include_apache_es_conf(self, conf_dir):
         """
         Assume extendedstatus.conf is unique to wavefront and writing over it.
         """
@@ -219,7 +237,6 @@ class ApacheInstaller(inst.PluginInstaller):
             'ExtendedStatus on')
         out.close()
 
-
     def apache_plugin_usage(self):
         utils.cprint(
           'To monitor a apache server, '
@@ -230,8 +247,6 @@ class ApacheInstaller(inst.PluginInstaller):
           '</Location>"\n'
           'must be included within a <VirtualHost> block '
           'for the .conf file of your server.\n')
-
-
 
 if __name__ == '__main__':
     apache = ApacheInstaller('Debian', 'wavefront_apache.conf')
