@@ -22,8 +22,9 @@ class PluginInstaller(object):
       support_os():
           - whether debian or redhat is supported
     """
-    def __init__(self, os):
+    def __init__(self, os, conf_name):
         self.os = os
+        self.conf_name = conf_name
 
     def title(self):
         raise NotImplementedError()
@@ -39,6 +40,9 @@ class PluginInstaller(object):
 
     def support_os(self, os):
         raise NotImplementedError()
+
+    def get_conf_name(self):
+        return self.conf_name
 
     def clean_plugin_write(self):
         """
@@ -56,8 +60,10 @@ class PluginInstaller(object):
 
         try:
             res = self.write_plugin(out)
-        except:
-            utils.eprint('Unexpected flow.')
+        except Exception as e:
+            utils.eprint(
+                'Error: {}\n'
+                'Unexpected flow.'.format(e))
             error = True
         finally:
             out.close()
@@ -92,22 +98,23 @@ class PluginInstaller(object):
         utils.call_command('rm {}'.format(temp_file))
 
     def install(self):
-        # doing so allow python to complain
-        if config.DEBUG:
+        try:
             self.title()
             self.overview()
             self.check_dependency()
             self.clean_plugin_write()
-        else:
-            try:
-                self.title()
-                self.overview()
-                self.check_dependency()
-                self.clean_plugin_write()
-            except:
-                utils.eprint(
-                    '{} was not installed successfully.'.format(
-                        self.__class__.__name__))
-                return False
+        except KeyboardInterrupt:
+            utils.eprint(
+                'Quitting {}.'.format(
+                    self.__class__.__name__))
+            return False
+        except Exception as e:
+            utils.eprint(
+                'Error: {}\n'
+                '{} was not installed successfully.'.format(
+                    e, self.__class__.__name__))
+            return False
 
-            return True
+        utils.print_color_msg('{} was installed successfully.'.format(
+            self.__class__.__name__), utils.GREEN)
+        return True

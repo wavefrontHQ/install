@@ -12,10 +12,6 @@ INVALID_URL = -1
 
 
 class ApacheInstaller(inst.PluginInstaller):
-    def __init__(self, os, conf_name):
-        super(ApacheInstaller, self).__init__(os)
-        self.conf_name = conf_name
-
     def title(self):
         utils.cprint(
             ' _____ __________  _____  _________   ___ ______________\n'
@@ -38,6 +34,9 @@ class ApacheInstaller(inst.PluginInstaller):
         _ = utils.cinput('Press Enter to continue')
         utils.print_step('Begin collectd Apache plugin installer')
 
+    def support_os(self, os):
+        return os == config.DEBIAN
+
     def check_dependency(self):
         """
         Apache checklist:
@@ -55,27 +54,33 @@ class ApacheInstaller(inst.PluginInstaller):
         if self.os == config.DEBIAN:
             utils.print_step('  Checking if mod_status is enabled')
             cmd_res = utils.get_command_output('ls /etc/apache2/mods-enabled')
-            if 'status.conf' not in cmd_res or 'status.load' not in cmd_res:
+            if cmd_res is None:
+                utils.eprint(
+                    'Apache2 mods-enabled folder is not '
+                    'found /etc/apache2/mods-enabled.')
+                utils.print_failure()
+            elif 'status.conf' not in cmd_res or 'status.load' not in cmd_res:
                 utils.print_step('Enabling apache2 mod_status module.')
                 ret = utils.call_command('sudo a2enmod status')
                 if ret != 0:
+                    utils.print_failure()
                     utils.exit_with_message('a2enmod command was not found')
-            utils.print_success()
+                utils.print_success()
         elif self.os == config.REDHAT:
             utils.cprint()
             utils.cprint(
-                'To enable server status page for the apache web, '
-                'ensure that mod_status.so module is enabled. '
+                'To enable server status page for the apache web,\n'
+                'ensure that mod_status.so module is enabled.\n'
                 'This module is often enabled by default.\n'
                 '"LoadModule status_module modules/mod_status.so"\n'
-                'such line should be included in one of the conf files.')
+                'such line should be included in one of the conf files.\n')
             _ = utils.cinput('Press Enter to continue.')
 
         utils.cprint()
         utils.cprint(
-            'In order to fully utilize the apache plugin with collectd, '
+            'In order to fully utilize the apache plugin with collectd,\n'
             'the ExtendedStatus setting needs be turned on.\n'
-            'This setting can be turned on by having "ExtendedStatus on" '
+            'This setting can be turned on by having "ExtendedStatus on"\n'
             'in one of the .conf file.\n')
 
         utils.cprint(
