@@ -1,6 +1,5 @@
 import sys
 import re
-import socket
 
 import install_utils as utils
 import plugin_installer as inst
@@ -8,13 +7,6 @@ import config
 
 
 class MySQLInstaller(inst.PluginInstaller):
-    def __init__(self, os, conf_name):
-        super(MySQLInstaller, self).__init__(os)
-        self.conf_name = conf_name
-
-    def get_conf_name(self):
-        return self.conf_name
-
     def title(self):
         art = (
           ' ****     ****           ********   *******    **      \n'
@@ -30,11 +22,11 @@ class MySQLInstaller(inst.PluginInstaller):
     def overview(self):
         utils.cprint()
         utils.cprint(
-            'The collectd MySQL plugin collects data from '
-            'the SHOW STATUS command in mysqlclient. '
-            'The SHOW STATUS command can be used by user of '
-            'any priviledge.\nWhen asked for a user account, '
-            'please create one under the mysql server '
+            'The collectd MySQL plugin collects data from\n'
+            'the SHOW STATUS command in mysqlclient.\n'
+            'The SHOW STATUS command can be used by user of\n'
+            'any priviledge.\nWhen asked for a user account,\n'
+            'please create one under the mysql server\n'
             'the collectd will be monitoring.')
 
         _ = utils.cinput('Press Enter to continue')
@@ -43,47 +35,6 @@ class MySQLInstaller(inst.PluginInstaller):
 
     def check_dependency(self):
         pass
-
-    def check_valid_port(self, s):
-        if s is None:
-            return False
-
-        try:
-            num = int(s)
-        except ValueError:
-            utils.eprint(
-                '{} is not a valid port. '
-                'A valid port is a number '
-                'between (0, 65535) inclusive.'.format(s))
-            return False
-
-        if num < 0 or num > 65535:
-            utils.eprint(
-                '{} is not a valid port. '
-                'A valid port is a number '
-                'between (0, 65535) inclusive.'.format(s))
-            return False
-
-        return True
-
-    def is_valid_ipv4_address(self, address):
-        """
-        from stack overflow
-
-        source: http://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python/4017219#4017219
-        """
-        try:
-            socket.inet_pton(socket.AF_INET, address)
-        except AttributeError:  # no inet_pton here, sorry
-            try:
-                socket.inet_aton(address)
-            except socket.error:
-                return False
-            return address.count('.') == 3
-        except socket.error:  # not a valid address
-            return False
-
-        return True
 
     def check_socket_path(self, path):
         if path is None:
@@ -150,13 +101,13 @@ class MySQLInstaller(inst.PluginInstaller):
 
             if remote:
                 host = ''
-                while(not self.is_valid_ipv4_address(host)):
+                while(not utils.is_valid_ipv4_address(host)):
                     host = utils.get_input(
                         'What is the hostname of your DB server? '
                         '(ex: 127.0.0.1)')
 
                 port = None
-                while(not self.check_valid_port(port)):
+                while(not utils.check_valid_port(port)):
                     port = utils.get_input(
                         'What is the TCP-port used to connect to the host? '
                         '(ex: 3306)')
@@ -214,5 +165,5 @@ class MySQLInstaller(inst.PluginInstaller):
 
 
 if __name__ == '__main__':
-    sql = MySQLInstaller('Debian', 'wavefront_mysql.conf')
+    sql = MySQLInstaller('DEBIAN', 'wavefront_mysql.conf')
     sql.install()

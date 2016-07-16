@@ -112,7 +112,10 @@ def detect_applications():
       4. menu changes with install state (not yet implemented)
     """
 
-    plugins_file = '/tmp/app_configure/support_plugins.json'
+    if config.DEBUG:
+        plugins_file = 'support_plugins.json'
+    else:
+        plugins_file = '/tmp/app_configure/support_plugins.json'
     utils.print_step('Begin app detection')
 
     res = utils.get_command_output('ps -A')
@@ -189,7 +192,8 @@ def installer_menu(o_list, support_dict):
                     Installer = getattr(
                         importlib.import_module(app['module']),
                         app['class_name'])
-                    instance = Installer('Debian', app['conf_name'])
+                    instance = Installer(
+                        config.OPERATING_SYSTEM, app['conf_name'])
                     instance.install()
             else:
                 utils.print_reminder('Invalid option.')
