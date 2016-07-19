@@ -7,6 +7,7 @@ import random
 import socket
 import string
 
+BLACK = 0
 RED = 1
 GREEN = 2
 YELLOW = 3
@@ -110,7 +111,6 @@ def print_reminder(msg):
     call_command('tput setaf 5')  # 5 = magenta
     sys.stderr.write(msg + '\n')
     call_command('tput sgr0')
-
 
 
 def print_color_msg(msg, color):
