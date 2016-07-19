@@ -34,9 +34,6 @@ class ApacheInstaller(inst.PluginInstaller):
         _ = utils.cinput('Press Enter to continue')
         utils.print_step('Begin collectd Apache plugin installer')
 
-    def support_os(self, os):
-        return os == config.DEBIAN
-
     def check_dependency(self):
         """
         Apache checklist:
@@ -44,6 +41,9 @@ class ApacheInstaller(inst.PluginInstaller):
         - mod_status
         - extended status
         """
+
+        # checking plugin
+        utils.print_step('Checking dependency')
         if not utils.command_exists('curl'):
             utils.exit_with_failure('Curl is needed for this plugin.')
 
@@ -96,7 +96,7 @@ class ApacheInstaller(inst.PluginInstaller):
 
         if res:
             # dir changes depending on the system
-            # tested on Ubuntu 14.04, RHEL 7.2 
+            # tested on Ubuntu 14.04, RHEL 7.2
             if self.os == config.DEBIAN:
                 conf_dir = '/etc/apache2/conf-enabled'
                 app_name = 'apache2'
@@ -148,7 +148,8 @@ class ApacheInstaller(inst.PluginInstaller):
 
         while utils.ask('Would you like to add a server to monitor?'):
             sv_name = utils.get_input(
-                'How would you like to name this server?')
+                'How would you like to name this server? '
+                '(space between words will be removed)').replace(" ", "")
 
             if sv_name in sv_list:
                 utils.cprint('You have already used {}.'.format(
@@ -275,6 +276,6 @@ class ApacheInstaller(inst.PluginInstaller):
           'for the .conf file of your server.\n')
 
 if __name__ == '__main__':
-    apache = ApacheInstaller('REDHAT', 'wavefront_apache.conf')
+    apache = ApacheInstaller('REDHAT', 'apache', 'wavefront_apache.conf')
     config.INSTALL_LOG = '/dev/null'
     apache.install()

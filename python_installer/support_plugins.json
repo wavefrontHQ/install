@@ -3,7 +3,8 @@
       "standard_format": "see below",
       "APP_NAME": {
           "app_search": "search_name",
-          "module": "module_name",
+          "module": "python_module_name",
+          "plugin_name": "collectd_plugin_name",
           "class_name": "installer_name",
           "conf_name": "plugin_conf_filename"
       }
@@ -13,6 +14,7 @@
       {
           "app_search": "mysqld",
           "module": "mysql_plugin",
+          "plugin_name": "mysql",
           "class_name": "MySQLInstaller",
           "conf_name": "wavefront_mysql.conf"
       },
@@ -20,6 +22,7 @@
       {
           "app_search": "apache2|httpd",
           "module": "apache_plugin",
+          "plugin_name": "apache",
           "class_name": "ApacheInstaller",
           "conf_name": "wavefront_apache.conf"
       },
@@ -27,6 +30,7 @@
       {
           "app_search": "postgres",
           "module": "postgresql_plugin",
+          "plugin_name": "postgresql",
           "class_name": "PostgresqlInstaller",
           "conf_name": "wavefront_postgres.conf"
       }
