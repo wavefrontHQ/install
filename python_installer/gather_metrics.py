@@ -27,6 +27,10 @@ import config
 
 # Python required base version
 REQ_VERSION = (2, 7)
+# Install state of app
+INCOMPLETE = 2
+NEW = 1
+INSTALLED = 0
 
 
 def check_version():
@@ -104,12 +108,6 @@ def detect_applications():
     Want: nginx, postgres, amcq
     This function uses unix command ps -A and check whether
     the supported application is found.
-
-    installer flow:
-      1. show selections
-      2. installs a plugin
-      3. updates install state (not yet implemented)
-      4. menu changes with install state (not yet implemented)
     """
 
     if config.DEBUG:
@@ -131,6 +129,7 @@ def detect_applications():
 
     data = json.load(data_file)
     support_dict = collections.OrderedDict(data['data'])
+    utils.cprint('Printing support dict')
     support_list = []
 
     for app in support_dict:
@@ -143,34 +142,81 @@ def detect_applications():
         utils.cprint('No supported app plugin is detected')
         sys.exit(0)
 
-    """
-    MyClass = getattr(importlib.import_module("mysql_plugin"),
-        "MySQLInstaller")
-    instance = MyClass('testing')
-    instance.install()
-    """
 
-
-def installer_menu(o_list, support_dict):
+def installer_menu(app_list, support_dict):
     """
     provide the menu and prompts for the user to interact with the installer
+
+    installer flow:
+      1. show selections
+      2. installs a plugin
+      3. updates install state (not yet implemented)
+      4. menu changes with install state (not yet implemented)
+
+    Option  Name                 State      Date
+    (1)     mysql Installer      Installed  (installation date)
+    (2)     apache Installer     Incomplete
+    (3)     postgres Installer   New
+
+    if resinstall,
+      warn that this will overwrite {conf_file}.
     """
     exit_cmd = [
         'quit', 'q', 'exit']
 
-    res = None
+    # the format of each row in installing menu
+    menu_rowf = (
+        '{index:{index_pad}} {name:{name_pad}} '
+        '{state:{state_pad}} {date}')
+    index_pad = 7
+    name_pad = 30
+    state_pad = 12
+    color = utils.BLACK  # default
+
+    res = None  # to begin the prompt loop
     utils.cprint()
-    utils.print_color_msg(
+    utils.cprint(
         'We have detected the following applications that are '
-        'supported by our collectd installers.', utils.GREEN)
+        'supported by our collectd installers.')
 
     while res not in exit_cmd:
         utils.cprint()
-        utils.print_color_msg(
-            'The following are the available installers', utils.GREEN)
-        for i, app in enumerate(o_list):
-            utils.cprint(
-                '({i}) {app} installer'.format(i=i, app=app))
+        utils.cprint(
+            'The following are the available installers:')
+
+        utils.cprint(
+            menu_rowf.format(
+                index='Option', index_pad=index_pad,
+                name='Name', name_pad=name_pad,
+                state='State', state_pad=state_pad,
+                date='Date'))
+
+        install_state = check_install_state(app_list)
+        for i, app in enumerate(app_list):
+            index = '({i})'.format(i=i)
+            app_installer = '{} installer'.format(app)
+            app_state = install_state[app]['state']
+            if 'date' in install_state[app]:
+                date = install_state[app]['date']
+            else:
+                date = ''
+
+            if app_state == NEW:
+                state = 'New'
+                color = utils.GREEN
+            elif app_state == INCOMPLETE:
+                state = 'Incomplete'
+                color = utils.YELLOW
+            elif app_state == INSTALLED:
+                state = 'Installed'
+                color = utils.BLACK
+
+            utils.print_color_msg(
+                menu_rowf.format(
+                    index=index, index_pad=index_pad,
+                    name=app_installer, name_pad=name_pad,
+                    state=state, state_pad=state_pad,
+                    date=date), color)
         utils.cprint()
         utils.cprint(
             'To pick a installer, type in the corresponding number '
@@ -179,24 +225,99 @@ def installer_menu(o_list, support_dict):
         res = utils.get_input(
             'Which installer would you like to run?').lower()
         if res not in exit_cmd:
-            option = check_option(res, len(o_list))
+            option = check_option(res, len(app_list))
             if option is not None:
+                app = support_dict[app_list[option]]
                 utils.cprint(
                     'You have selected ({option}) {app} installer'.format(
-                        option=option, app=o_list[option]))
+                        option=option, app=app_list[option]))
+                app_state = install_state[app_list[option]]['state']
+                if app_state == INSTALLED:
+                    utils.cprint(
+                        'You have previously used this installer\n'
+                        'Reinstalling will overwrite the old configuration '
+                        'file, {}.'.format(app['conf_name']))
                 confirm = utils.ask(
                     'Would you like to proceed with '
                     'the installer?')
                 if confirm:
-                    app = support_dict[o_list[option]]
                     Installer = getattr(
                         importlib.import_module(app['module']),
                         app['class_name'])
                     instance = Installer(
                         config.OPERATING_SYSTEM, app['conf_name'])
-                    instance.install()
+                    if instance.install():
+                        install_state[app_list[option]]['state'] = INSTALLED
+                    else:
+                        install_state[app_list[option]]['state'] = INCOMPLETE
+                    install_state[app_list[option]]['date'] = '{:%c}'.format(
+                        datetime.now())
+                    update_install_state(install_state)
             else:
                 utils.print_reminder('Invalid option.')
+
+
+def check_install_state(app_list):
+    """
+    Given: a list of app name
+    return: a list of app_name and their states
+
+    Flow:
+     - check file path exists
+     - if exists:
+           check each app against the fiel
+           keep track of app and their states
+    """
+    file_not_found = False
+    empty_state_dict = {}
+    for app in app_list:
+        empty_state_dict[app] = {}
+        empty_state_dict[app]['state'] = NEW
+
+    file_path = 'testing'
+    # config.INSTALL_STATE_FILE_PATH
+    file_not_found = not utils.check_path_exists(file_path)
+
+    try:
+        install_file = open(file_path)
+    except (IOError, OSError) as e:
+        file_not_found = True
+    except Exception as e:
+        utils.exit_with_message('Error: {}'.format(e))
+
+    if file_not_found:
+        return empty_state_dict
+
+    data = json.load(install_file)
+    return data['data']
+
+
+def update_install_state(app_state_dict):
+    comment = {
+          "standard_format": "see below",
+          "APP_NAME": {
+              "state": "(INSTALLED = 0, INCOMPLETE = 1, NEW = 2 )",
+              "date": "time_of_installation"
+          }
+      }
+    json_content = collections.OrderedDict()
+    json_content['_comment'] = comment
+    json_content.update({'data': app_state_dict})
+
+    # TODO: needs to find a path to save this file
+    file_path = 'testing'
+
+    try:
+        outfile = open(file_path, 'w')
+    except:
+        utils.eprint(
+            'Cannot write to {}.\n'
+            'Installed state is not updated.'.format(file_path))
+        outfile = None
+
+    if outfile is not None:
+        json.dump(json_content, outfile, indent=4)
+        outfile.close()
 
 
 def check_option(option, max_length):

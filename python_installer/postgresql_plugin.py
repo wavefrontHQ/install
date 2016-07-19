@@ -51,7 +51,8 @@ class PostgresqlInstaller(inst.PluginInstaller):
             'two parameters to be turned on\n'
             '  - track_activities\n'
             '  - track_counts\n'
-            'They are usually enabled by default.')
+            'They are usually enabled by default and can\n'
+            'be found at postgresql.conf.')
         utils.cprint()
         _ = utils.cinput('Press Enter to continue')
 
@@ -113,7 +114,8 @@ class PostgresqlInstaller(inst.PluginInstaller):
                 '(The name should match your database name)')
 
             iname = utils.get_input(
-                'How would you like to name this monitoring instance?')
+                'How would you like to name this monitoring instance?\n'
+                '(How it should appear on your wavefront metric page)')
 
             while iname in name_list:
                 utils.cprint(

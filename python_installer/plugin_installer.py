@@ -2,10 +2,6 @@ import install_utils as utils
 import config
 
 
-COLLECTD_HOME = '/etc/collectd'
-COLLECTD_CONF_DIR = COLLECTD_HOME + '/managed_config'
-
-
 class PluginInstaller(object):
     """
     The interface for installers
@@ -78,7 +74,7 @@ class PluginInstaller(object):
             cp_cmd = (
                 'cp {infile} {conf_dir}/{outfile}').format(
                     infile=temp_file,
-                    conf_dir=COLLECTD_CONF_DIR,
+                    conf_dir=config.COLLECTD_CONF_DIR,
                     outfile=self.conf_name)
             ret = utils.call_command(cp_cmd)
 
@@ -88,7 +84,7 @@ class PluginInstaller(object):
                 utils.cprint(
                     '{0} can be found at {1}.'.format(
                         self.conf_name,
-                        COLLECTD_CONF_DIR))
+                        config.COLLECTD_CONF_DIR))
             else:
                 utils.call_command('rm {}'.format(temp_file))
                 utils.exit_with_message('Failed to copy the plugin file.\n')
