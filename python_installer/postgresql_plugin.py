@@ -6,14 +6,14 @@ import config
 class PostgresqlInstaller(inst.PluginInstaller):
     def title(self):
         utils.cprint(
-    "______         _                       _____  _____ _     \n"
-    "| ___ \       | |                     /  ___||  _  | |    \n"
-    "| |_/ /__  ___| |_ __ _ _ __ ___  ___ \ `--. | | | | |    \n"
-    "|  __/ _ \/ __| __/ _` | '__/ _ \/ __| `--. \| | | | |    \n"
-    "| | | (_) \__ \ || (_| | | |  __/\__ \/\__/ /\ \/' / |____\n"
-    "\_|  \___/|___/\__\__, |_|  \___||___/\____/  \_/\_\_____/\n"
-    "                   __/ |                                  \n"
-    "                  |___/                                  ")
+            "______         _                       _____  _____ _     \n"
+            "| ___ \       | |                     /  ___||  _  | |    \n"
+            "| |_/ /__  ___| |_ __ _ _ __ ___  ___ \ `--. | | | | |    \n"
+            "|  __/ _ \/ __| __/ _` | '__/ _ \/ __| `--. \| | | | |    \n"
+            "| | | (_) \__ \ || (_| | | |  __/\__ \/\__/ /\ \/' / |____\n"
+            "\_|  \___/|___/\__\__, |_|  \___||___/\____/  \_/\_\_____/\n"
+            "                   __/ |                                  \n"
+            "                  |___/                                  ")
 
     def overview(self):
         utils.cprint()
@@ -56,7 +56,6 @@ class PostgresqlInstaller(inst.PluginInstaller):
         utils.cprint()
         _ = utils.cinput('Press Enter to continue')
 
-        
     def write_plugin(self, out):
         """
         unique query name
@@ -97,8 +96,8 @@ class PostgresqlInstaller(inst.PluginInstaller):
             '    Query disk_io_by_table\n'
             '    Query disk_usage\n')
 
-        count = 0 # track how many db is monitored
-        name_list = [] # keep a list of db name to check for uniqueness
+        count = 0  # track how many db is monitored
+        name_list = []  # keep a list of db name to check for uniqueness
 
         utils.cprint()
         utils.print_step('Begin writing PostgresSQL plugin for collectd')
@@ -115,7 +114,8 @@ class PostgresqlInstaller(inst.PluginInstaller):
 
             iname = utils.get_input(
                 'How would you like to name this monitoring instance?\n'
-                '(How it should appear on your wavefront metric page)')
+                '(How it should appear on your wavefront metric page, \n'
+                'space between words will be removed)').replace(" ", "")
 
             while iname in name_list:
                 utils.cprint(
@@ -177,12 +177,6 @@ class PostgresqlInstaller(inst.PluginInstaller):
 
         out.write('</Plugin>\n')
         return count
-
-    def support_os(self, os):
-        raise NotImplementedError()
-
-    def get_conf_name(self):
-        return self.conf_name
 
 if __name__ == '__main__':
     postgres = PostgresqlInstaller('DEBIAN', 'wavefront_postgres.conf')

@@ -118,6 +118,7 @@ def print_color_msg(msg, color):
     sys.stderr.write(msg + '\n')
     call_command('tput sgr0')
 
+
 def print_failure():
     call_command('tput setaf 1')  # 1 = red
     print_right('[ FAILED ]')

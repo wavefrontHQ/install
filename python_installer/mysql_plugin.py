@@ -84,13 +84,15 @@ class MySQLInstaller(inst.PluginInstaller):
         count = 0
         db_list = []
         if self.os == config.DEBIAN:
-          default_socket_path = '/var/run/mysqld/mysqld.sock'
+            default_socket_path = '/var/run/mysqld/mysqld.sock'
         if self.os == config.REDHAT:
-          default_socket_path = '/var/lib/mysql/mysql.sock'
+            default_socket_path = '/var/lib/mysql/mysql.sock'
 
         while utils.ask('Would you like to add a DB server to monitor?'):
             db = utils.get_input(
-                'How would you like to name this DB server?')
+                'How would you like to name this DB '
+                'server? (Space between words will be '
+                'removed)').replace(" ", "")
 
             if db in db_list:
                 utils.cprint('You have already recorded this db')

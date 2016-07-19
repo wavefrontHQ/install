@@ -1,5 +1,6 @@
 import install_utils as utils
 import config
+import plugin_exception as ex
 
 
 class PluginInstaller(object):
@@ -15,13 +16,13 @@ class PluginInstaller(object):
           - check plugin and installer's dependency
       write_plugin():
           - write the actual plugin file
-      support_os():
-          - whether debian or redhat is supported
     """
-    def __init__(self, os, conf_name):
+    def __init__(self, os, plugin_name, conf_name):
         self.os = os
+        self.plugin_name = plugin_name
         self.conf_name = conf_name
 
+    # methods that subclass needs to implement
     def title(self):
         raise NotImplementedError()
 
@@ -34,11 +35,39 @@ class PluginInstaller(object):
     def write_plugin(self, out):
         raise NotImplementedError()
 
-    def support_os(self, os):
-        raise NotImplementedError()
-
+    # helper methods
     def get_conf_name(self):
         return self.conf_name
+
+    def raise_error(self, msg):
+        raise ex.MissingDependencyError(msg)
+
+    def check_plugin(self):
+        """
+        check if the .so file of plugin exists in the following dir
+        """
+
+        utils.print_step(
+            'Checking if the plugin is installed with '
+            'the default collectd package')
+
+        plugin_dir = ''
+        if self.os == config.REDHAT:
+            plugin_dir = '/usr/lib64/collectd'
+        elif self.os == config.DEBIAN:
+            plugin_dir = '/usr/lib/collectd'
+
+        if not utils.check_path_exists(plugin_dir):
+            raise Exception(
+                'Collectd plugin directory is '
+                'not found at {}'.format(plugin_dir))
+
+        plugin_mod = self.plugin_name + '.so'
+        if utils.check_path_exists(
+          '{}/{}'.format(plugin_dir, plugin_mod)):
+            utils.print_success()
+        else:
+            self.raise_error('Missing {} plugin'.format(self.name))
 
     def clean_plugin_write(self):
         """
@@ -56,6 +85,9 @@ class PluginInstaller(object):
 
         try:
             res = self.write_plugin(out)
+        except KeyboardInterrupt as k:
+            error = True
+            raise k
         except Exception as e:
             utils.eprint(
                 'Error: {}\n'
@@ -66,7 +98,7 @@ class PluginInstaller(object):
             if error:
                 utils.eprint('Closing and removing temp file.\n')
                 utils.call_command('rm ' + temp_file)
-                utils.exit_with_message('')
+                raise KeyboardInterrupt
 
         # if there was at least one instance being monitor
         if res:
@@ -80,7 +112,9 @@ class PluginInstaller(object):
 
             if ret == 0:
                 utils.print_success()
-                utils.cprint('MySQL plugin has been written successfully.')
+                utils.cprint(
+                    '{} plugin has been written successfully.'.format(
+                      self.name))
                 utils.cprint(
                     '{0} can be found at {1}.'.format(
                         self.conf_name,
@@ -97,12 +131,20 @@ class PluginInstaller(object):
         try:
             self.title()
             self.overview()
+            self.check_plugin()
             self.check_dependency()
             self.clean_plugin_write()
         except KeyboardInterrupt:
             utils.eprint(
                 'Quitting {}.'.format(
                     self.__class__.__name__))
+            return False
+        except ex.MissingDependencyError as e:
+            utils.eprint(
+                'MissingDependencyError: {}\n'
+                '{} requires the missing dependency '
+                'to finish installing.'.format(
+                    e, self.__class__.__name__))
             return False
         except Exception as e:
             utils.eprint(

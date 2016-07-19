@@ -245,7 +245,9 @@ def installer_menu(app_list, support_dict):
                         importlib.import_module(app['module']),
                         app['class_name'])
                     instance = Installer(
-                        config.OPERATING_SYSTEM, app['conf_name'])
+                        config.OPERATING_SYSTEM,
+                        app['plugin_name'],
+                        app['conf_name'])
                     if instance.install():
                         install_state[app_list[option]]['state'] = INSTALLED
                     else:
@@ -274,8 +276,7 @@ def check_install_state(app_list):
         empty_state_dict[app] = {}
         empty_state_dict[app]['state'] = NEW
 
-    file_path = 'testing'
-    # config.INSTALL_STATE_FILE_PATH
+    file_path = config.INSTALL_STATE_FILE_PATH
     file_not_found = not utils.check_path_exists(file_path)
 
     try:
@@ -305,7 +306,7 @@ def update_install_state(app_state_dict):
     json_content.update({'data': app_state_dict})
 
     # TODO: needs to find a path to save this file
-    file_path = 'testing'
+    file_path = config.INSTALL_STATE_FILE_PATH
 
     try:
         outfile = open(file_path, 'w')
