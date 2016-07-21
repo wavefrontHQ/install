@@ -56,6 +56,8 @@ CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
 COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
+COLLECTD_PLUGINS=(
+    "disk" "netlink" "apache" "mysql" "postgresql")
 
 while :
 do
@@ -395,6 +397,23 @@ function detect_architecture() {
         exit_with_failure "Unsupported architecture ($ARCHITECTURE)"
     fi
 }
+
+# yum_quiet_install() is a helper function that
+# that yum install the array of collectd plugins
+# $1 - arrayname
+function yum_quiet_install() {
+    local _aname=$1[@]
+    local _array=("${!_aname}")
+    for plugin in "${_array[@]}"
+    do
+        echo -e "\nyum -y -q install collectd-$plugin" >>${INSTALL_LOG}
+        yum -y install collectd-$plugin >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to install collectd-$plugin"
+        fi
+    done
+}
+
 
 # main()
 set_install_log
@@ -754,16 +773,9 @@ EOF
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to install collectd"
         fi
-        echo -e "\nyum -y -q install collectd-disk" >>${INSTALL_LOG}
-        yum -y install collectd-disk >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-disk"
-        fi
-        echo -e "\nyum -y -q install collectd-netlink" >>${INSTALL_LOG}
-        yum -y install collectd-netlink >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-netlink"
-        fi
+
+        # new plugins installation
+        yum_quiet_install COLLECTD_PLUGINS
         echo_success
         ;;
     esac
@@ -774,6 +786,7 @@ EOF
         if ask "Would you like to overwrite any existing collectd configuration? " N; then
             OVERWRITE_COLLECTD_CONFIG="yes"
         else
+            APP_CONFIGURE="no"
             echo
             echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
             echo "Manual setup is required"
@@ -840,7 +853,7 @@ EOF
         fi
     fi
 
-    if [ -n "$APP_CONFIGURE" ]; then
+    if [ "$APP_CONFIGURE" == "yes" ]; then
         if command_exists wget; then
             FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
         elif command_exists curl; then
@@ -849,7 +862,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/372494/app_configure.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/374933/app_configure.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"

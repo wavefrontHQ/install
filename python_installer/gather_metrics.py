@@ -2,7 +2,7 @@
 """
 The main module file that will be invoked by the one line installer.
 
-Usage: gather_metrics [optional log file]
+Usage: gather_metrics [operating system(DEBIAN|REDHAT)] log file]
 
 If log file is provided, then errors will be logged to such file.
 Otherwise, all errors will be flushed.
@@ -129,7 +129,6 @@ def detect_applications():
 
     data = json.load(data_file)
     support_dict = collections.OrderedDict(data['data'])
-    utils.cprint('Printing support dict')
     support_list = []
 
     for app in support_dict:
@@ -233,7 +232,7 @@ def installer_menu(app_list, support_dict):
                         option=option, app=app_list[option]))
                 app_state = install_state[app_list[option]]['state']
                 if app_state == INSTALLED:
-                    utils.cprint(
+                    utils.print_warn(
                         'You have previously used this installer\n'
                         'Reinstalling will overwrite the old configuration '
                         'file, {}.'.format(app['conf_name']))
@@ -290,14 +289,19 @@ def check_install_state(app_list):
         return empty_state_dict
 
     data = json.load(install_file)
-    return data['data']
+    data = data['data']
+    for app in app_list:
+        if app not in data:
+            data[app] = {}
+            data[app]['state'] = NEW
+    return data
 
 
 def update_install_state(app_state_dict):
     comment = {
           "standard_format": "see below",
           "APP_NAME": {
-              "state": "(INSTALLED = 0, INCOMPLETE = 1, NEW = 2 )",
+              "state": "(INSTALLED = 0, INCOMPLETE = 1, NEW = 2)",
               "date": "time_of_installation"
           }
       }

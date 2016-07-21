@@ -67,7 +67,8 @@ class PluginInstaller(object):
           '{}/{}'.format(plugin_dir, plugin_mod)):
             utils.print_success()
         else:
-            self.raise_error('Missing {} plugin'.format(self.name))
+            self.raise_error('Missing {} plugin for collectd'.format(
+                self.plugin_name))
 
     def clean_plugin_write(self):
         """
@@ -114,7 +115,7 @@ class PluginInstaller(object):
                 utils.print_success()
                 utils.cprint(
                     '{} plugin has been written successfully.'.format(
-                      self.name))
+                      self.plugin_name))
                 utils.cprint(
                     '{0} can be found at {1}.'.format(
                         self.conf_name,
@@ -143,7 +144,7 @@ class PluginInstaller(object):
             utils.eprint(
                 'MissingDependencyError: {}\n'
                 '{} requires the missing dependency '
-                'to finish installing.'.format(
+                'to continue the installation.'.format(
                     e, self.__class__.__name__))
             return False
         except Exception as e:
