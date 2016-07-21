@@ -41,11 +41,18 @@ class MySQLInstaller(inst.PluginInstaller):
             return False
         # if it begins with ~ then do expand user
 
-        socket_re = re.match(r'mysqld.sock$|(~/|/)(.*/)*mysqld.sock$', path)
+        if self.os == config.DEBIAN:
+            socket_re = re.match(
+                r'mysqld.sock$|(~/|/)(.*/)*mysqld.sock$', path)
+        if self.os == config.REDHAT:
+            socket_re = re.match(
+                r'mysql.sock$|(~/|/)(.*/)*mysql.sock$', path)
+
         if socket_re is None:
             utils.eprint(
                 'Invalid path was given.\n'
-                ' -Path has to end with mysqld.sock.\n'
+                ' -filename has to end with .sock.\n'
+                ' -Debian uses mysqld.sock, Redhat uses mysql.sock\n'
                 ' -If relative path is used, please add ~/ '
                 'to the beginning')
             return False
@@ -58,7 +65,7 @@ class MySQLInstaller(inst.PluginInstaller):
         if not res:
             utils.eprint(
                 'Invalid path was given. '
-                'Could not find mysqld.sock with the given path.')
+                'Could not find {}.'.format(path))
 
         return res
 
@@ -117,7 +124,7 @@ class MySQLInstaller(inst.PluginInstaller):
                 socket = None
                 while(not self.check_socket_path(socket)):
                     socket = utils.get_input(
-                        'What is the path to your mysqld.sock?',
+                        'What is the path to your mysql sock file?',
                         default_socket_path)
 
             utils.cprint(
@@ -167,5 +174,5 @@ class MySQLInstaller(inst.PluginInstaller):
 
 
 if __name__ == '__main__':
-    sql = MySQLInstaller('DEBIAN', 'wavefront_mysql.conf')
+    sql = MySQLInstaller('DEBIAN', 'mysql', 'wavefront_mysql.conf')
     sql.install()
