@@ -97,7 +97,7 @@ class PluginInstaller(object):
         finally:
             out.close()
             if error:
-                utils.eprint('Closing and removing temp file.\n')
+                utils.eprint('\nClosing and removing temp file.\n')
                 utils.call_command('rm ' + temp_file)
                 raise KeyboardInterrupt
 
@@ -124,7 +124,8 @@ class PluginInstaller(object):
                 utils.call_command('rm {}'.format(temp_file))
                 utils.exit_with_message('Failed to copy the plugin file.\n')
         else:
-            utils.cprint('You did not provide any instance to monitor.\n')
+            utils.call_command('rm {}'.format(temp_file))
+            raise Exception('You did not provide any instance to monitor.\n')
 
         utils.call_command('rm {}'.format(temp_file))
 

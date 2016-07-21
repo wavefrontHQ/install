@@ -6,7 +6,9 @@ import subprocess
 import random
 import socket
 import string
+import re
 
+# colors for the print
 BLACK = 0
 RED = 1
 GREEN = 2
@@ -14,6 +16,12 @@ YELLOW = 3
 BLUE = 4
 MAGENTA = 5
 CYAN = 6
+
+# http response header
+NOT_AUTH = 401
+NOT_FOUND = 404
+HTTP_OK = 200
+INVALID_URL = -1
 
 
 # input/output utils
@@ -149,7 +157,7 @@ def exit_with_message(msg):
     sys.exit(1)
 
 
-def exit_with_failrue(msg):
+def exit_with_failure(msg):
     print_failure()
     exit_with_message(msg)
 
@@ -216,6 +224,23 @@ def write_file(filename):
 def get_http_status(url):
     status_cmd = 'curl --head -s ' + url + ' | head -n 1'
     return get_command_output(status_cmd)
+
+
+def check_http_response(http_res):
+    http_status_re = re.match('HTTP/1.1 (\d* [\w ]*)\s', http_res)
+    if http_status_re is None:
+        return INVALID_URL
+
+    http_code = http_status_re.group(1)
+
+    if('401 Unauthorized' in http_code):
+        return NOT_AUTH
+    elif('404 Not Found' in http_code):
+        return NOT_FOUND
+    elif('200 OK' in http_code):
+        return HTTP_OK
+    else:
+        return INVALID_URL
 
 
 def cprint(*args, **kwargs):
