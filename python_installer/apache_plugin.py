@@ -4,12 +4,6 @@ import install_utils as utils
 import plugin_installer as inst
 import config
 
-# http response header
-NOT_AUTH = 401
-NOT_FOUND = 404
-HTTP_OK = 200
-INVALID_URL = -1
-
 
 class ApacheInstaller(inst.PluginInstaller):
     def title(self):
@@ -42,7 +36,6 @@ class ApacheInstaller(inst.PluginInstaller):
         - extended status
         """
 
-        # checking plugin
         utils.print_step('Checking dependency')
         if not utils.command_exists('curl'):
             utils.exit_with_failure('Curl is needed for this plugin.')
@@ -119,7 +112,7 @@ class ApacheInstaller(inst.PluginInstaller):
                         app_name=app_name,
                         log=config.INSTALL_LOG))
                 if ret != 0:
-                    utils.exit_with_message(
+                    self.raise_error(
                         'Failed to restart apache service.')
                 utils.print_success()
             else:
@@ -137,14 +130,9 @@ class ApacheInstaller(inst.PluginInstaller):
         count = 0
         server_list = []
         sv_list = []
+        overwrite = True
 
         self.apache_plugin_usage()
-        utils.cprint(
-            'To check whether the server-status page is working, '
-            'please visit\n'
-            '\tyour-server-name/server-status\n'
-            'It should look similar to\n'
-            '\tapache.org/server-status\n')
 
         while utils.ask('Would you like to add a server to monitor?'):
             sv_name = utils.get_input(
@@ -157,76 +145,71 @@ class ApacheInstaller(inst.PluginInstaller):
                 continue
 
             url = utils.get_input(
-                'Please enter the url that contains your ' +
+                'Please enter the url that contains your '
                 'server-status (ex: www.apache.org/server_status):')
             utils.cprint()
+
+            if url in server_list:
+                utils.eprint(
+                    'You have already added this {} server.'.format(url))
+                continue
+
             utils.print_step('Checking http response for %s' % url)
             res = utils.get_command_output('curl -s -i '+url)
 
             if res is None:
-                ret = INVALID_URL
+                ret = utils.INVALID_URL
             else:
-                ret = self.check_http_response(res)
+                ret = utils.check_http_response(res)
 
-            if ret == NOT_AUTH:
+            if ret == utils.NOT_AUTH:
                 # skip for this case for now, ask for user/pass
                 utils.eprint(
                     'Authorization server status is required, please '
                     'try again.\n')
-            elif ret == NOT_FOUND or ret == INVALID_URL:
+            elif ret == utils.NOT_FOUND or ret == utils.INVALID_URL:
                 utils.print_failure()
                 utils.eprint(
                     'Invalid url was provided, please try '
                     'again.\n')
-            elif ret == HTTP_OK:
+            elif ret == utils.HTTP_OK:
                 utils.print_success()
-                if url in server_list:
+                overwrite = True
+                status = self.check_apache_server_status(res)
+                if status is None:
                     utils.print_warn(
-                        'You have already added this server instance.')
-                else:
-                    res = self.check_apache_server_status(res)
-                    if res is None:
-                        utils.print_warn(
-                            'The url you have provided '
-                            'does not seem to be the correct server_status '
-                            'page.  Incorrect server-status will not be '
-                            'recorded by collectd.')
-                        utils.ask(
-                            'Would you like to record this url anyway?', 'no')
+                        'The url you have provided '
+                        'does not seem to be the correct server_status '
+                        'page.  Incorrect server-status will not be '
+                        'recorded by collectd.')
+                    overwrite = utils.ask(
+                        'Would you like to record this url anyway?', 'no')
+
+                if overwrite:
+                    if status:
+                        utils.cprint(status)
+                    url_auto = url+'?auto'
+                    plugin_instance = (
+                        '  <Instance "{instance}">\n'
+                        '    URL "{url}"\n'
+                        '  </Instance>\n').format(instance=sv_name,
+                                                  url=url_auto)
+                    utils.cprint()
+                    utils.cprint(
+                        'Your url is appended with ?auto to convert '
+                        'the content into machine readable code.\n'
+                        '{}'.format(plugin_instance))
+                    res = utils.ask(
+                        'Is this the correct status to monitor?')
+                    if res:
+                        count = count + 1
+                        server_list.append(url)
+                        sv_list.append(sv_name)
+                        out.write(plugin_instance)
                     else:
-                        utils.cprint(res)
-                        res = utils.ask(
-                            'Is this the correct status to monitor?')
-                        utils.cprint()
-                        if res:
-                            count = count + 1
-                            server_list.append(url)
-                            sv_list.append(sv_name)
-                            url_auto = url+'?auto'
-                            plugin_instance = (
-                                '  <Instance "{instance}">\n'
-                                '    URL "{url}"\n'
-                                '  </Instance>\n').format(instance=sv_name,
-                                                          url=url_auto)
-                            out.write(plugin_instance)
+                        utils.cprint('Instance is not saved.')
         out.write('</Plugin>\n')
         return count
-
-    def check_http_response(self, http_res):
-        http_status_re = re.match('HTTP/1.1 (\d* [\w ]*)\s', http_res)
-        if http_status_re is None:
-            return INVALID_URL
-
-        http_code = http_status_re.group(1)
-
-        if('401 Unauthorized' in http_code):
-            return NOT_AUTH
-        elif('404 Not Found' in http_code):
-            return NOT_FOUND
-        elif('200 OK' in http_code):
-            return HTTP_OK
-        else:
-            return INVALID_URL
 
     def check_apache_server_status(self, payload):
         atitle_re = re.search(
@@ -273,9 +256,13 @@ class ApacheInstaller(inst.PluginInstaller):
           '  SetHandler server-status\n'
           '</Location>"\n'
           'must be included within a <VirtualHost> block '
-          'for the .conf file of your server.\n')
-
+          'for the .conf file of your server.\n\n'
+          'To check whether the server-status page is working, '
+          'please visit\n'
+          '\tyour-server-name/server-status\n'
+          'It should look similar to\n'
+          '\tapache.org/server-status\n')
 if __name__ == '__main__':
-    apache = ApacheInstaller('REDHAT', 'apache', 'wavefront_apache.conf')
+    apache = ApacheInstaller('DEBIAN', 'apache', 'wavefront_apache.conf')
     config.INSTALL_LOG = '/dev/null'
     apache.install()

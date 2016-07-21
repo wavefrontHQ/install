@@ -33,6 +33,14 @@
           "plugin_name": "postgresql",
           "class_name": "PostgresqlInstaller",
           "conf_name": "wavefront_postgres.conf"
+      },
+      "nginx":
+      {
+          "app_search": "nginx",
+          "module": "nginx_plugin",
+          "plugin_name": "nginx",
+          "class_name": "NginxInstaller",
+          "conf_name": "wavefront_nginx.conf"
       }
   }
 }
