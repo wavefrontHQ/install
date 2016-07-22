@@ -652,7 +652,7 @@ if [ -n "$INSTALL_PROXY" ]; then
     echo_success
     # Start the service.
     echo_step "  Starting Service"
-    service wavefront-proxy start >>${INSTALL_LOG} 2>&1
+    service wavefront-proxy restart >>${INSTALL_LOG} 2>&1
     if [ $? -ne 0 ]; then
         exit_with_failure "Failed to start the Wavefront Proxy"
     fi
