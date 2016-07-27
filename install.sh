@@ -400,8 +400,8 @@ function detect_architecture() {
 
 function check_fqdn() {
     echo_step "Checking FQDN"
-    echo -e "\nhostname -f" >>${INSTALL_LOG} 2>&1
-    hostname -f > /dev/null
+    echo -e "\nhostname -f" >>${INSTALL_LOG}
+    hostname -f >> ${INSTALL_LOG} 2>&1
     if [ "$?" != 0 ]; then
         echo_failure
         echo
