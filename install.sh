@@ -400,14 +400,15 @@ function detect_architecture() {
 
 function check_fqdn() {
     echo_step "Checking FQDN"
-    echo -e "\nhostname -f" >>${INSTALL_LOG}
+    echo -e "\nhostname -f" >>${INSTALL_LOG} 2>&1
     hostname -f > /dev/null
     if [ "$?" != 0 ]; then
+        echo_failure
         echo
         echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
         echo "FDQN needs to be resolved before the installation."
         echo "Manual change is required."
-        exit_with_failure "Failed to resolve FDQN"
+        exit_with_message "Failed to resolve FDQN"
     else
         echo_success
     fi
