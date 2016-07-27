@@ -398,6 +398,16 @@ function detect_architecture() {
     fi
 }
 
+function check_fqdn() {
+    hostname -f > /dev/null
+    if [ "$?" != 0 ]; then
+        echo
+        echo "FDQN needs to be resolved before the installation."
+        echo "Manual change is required."
+        exit_with_failure "Failed to resolve FDQN"
+    fi
+}
+
 # yum_quiet_install() is a helper function that
 # that yum install the array of collectd plugins
 # $1 - arrayname
@@ -427,6 +437,7 @@ echo_title "Welcome to Wavefront"
 check_if_root_or_die
 detect_architecture
 detect_operating_system
+function check_fqdn
 
 if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
@@ -795,14 +806,6 @@ EOF
     fi
 
     if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
-        hostname -f > /dev/null
-        if [ "$?" != 0 ]; then
-            echo
-            echo "FDQN needs to be resolved for the configuration file to work"
-            echo "Manual change is required"
-            exit_with_failure "Failed to resolve FDQN"
-        fi
-
         if command_exists wget; then
             FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
         elif command_exists curl; then
