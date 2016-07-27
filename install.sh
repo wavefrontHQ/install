@@ -399,12 +399,17 @@ function detect_architecture() {
 }
 
 function check_fqdn() {
+    echo_step "Checking FQDN"
+    echo -e "\nhostname -f" >>${INSTALL_LOG}
     hostname -f > /dev/null
     if [ "$?" != 0 ]; then
         echo
+        echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
         echo "FDQN needs to be resolved before the installation."
         echo "Manual change is required."
         exit_with_failure "Failed to resolve FDQN"
+    else
+        echo_success
     fi
 }
 
@@ -437,7 +442,7 @@ echo_title "Welcome to Wavefront"
 check_if_root_or_die
 detect_architecture
 detect_operating_system
-function check_fqdn
+check_fqdn
 
 if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
