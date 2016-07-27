@@ -181,7 +181,21 @@ def command_exists(command):
 
     From install.sh
     """
-    res = call_command('hash ' + command + ' >/dev/null 2>&1')
+    res = call_command(
+        'hash {} > /dev/null 2>&1'.format(command))
+    if res != 0:
+        return False
+    else:
+        return True
+
+
+def check_service(service):
+    """check service status
+
+    return False if return code is not 0
+    """
+    res = call_command(
+        'service {} status > /dev/null 2>&1'.format(service))
     if res != 0:
         return False
     else:

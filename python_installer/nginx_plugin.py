@@ -26,7 +26,7 @@ class NginxInstaller(inst.PluginInstaller):
             '2. Enable the nginx-status page for each virtual host.\n')
 
         _ = utils.cinput('Press Enter to continue')
-        utils.print_step('Begin collectd Apache plugin installer')
+        utils.print_step('Begin collectd Nginx plugin installer')
 
     def check_dependency(self):
         utils.print_step('Checking dependency')
