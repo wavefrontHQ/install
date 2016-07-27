@@ -21,6 +21,11 @@ class PluginInstaller(object):
         self.os = os
         self.plugin_name = plugin_name
         self.conf_name = conf_name
+        self.plugin_dir = 'NOT SET'
+        if self.os == config.REDHAT:
+            self.plugin_dir = '/usr/lib64/collectd'
+        elif self.os == config.DEBIAN:
+            self.plugin_dir = '/usr/lib/collectd'
 
     # methods that subclass needs to implement
     def title(self):
@@ -50,12 +55,6 @@ class PluginInstaller(object):
         utils.print_step(
             'Checking if the plugin is installed with '
             'the default collectd package')
-
-        plugin_dir = ''
-        if self.os == config.REDHAT:
-            plugin_dir = '/usr/lib64/collectd'
-        elif self.os == config.DEBIAN:
-            plugin_dir = '/usr/lib/collectd'
 
         if not utils.check_path_exists(plugin_dir):
             raise Exception(

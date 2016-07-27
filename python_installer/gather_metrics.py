@@ -72,6 +72,7 @@ def port_scan(host, port):
 def check_app(output, app_dict):
     app_search = app_dict['app_search']
     app_service = app_dict['service_name']
+    app_cmds = app_dict['command'].split('|')
 
     app_re = re.search(
         r' ({app_search})\n'.format(
@@ -81,14 +82,19 @@ def check_app(output, app_dict):
         utils.eprint(pattern)
 
     if app_re is None:
-        app_service_name = app_service.split('|')
-        if config.DEBUG:
-            utils.eprint(app_service_name)
-        for name in app_service_name:
-            if utils.check_service(name):
+        for cmd in app_cmds:
+            if config.DEBUG:
+                utils.eprint(cmd)
+            if utils.command_exists(cmd):
                 return True
-
         return False
+
+    #     app_service_name = app_service.split('|')
+    #     if config.DEBUG:
+    #         utils.eprint(app_service_name)
+    #     for name in app_service_name:
+    #         if utils.check_service(name):
+    #             return True
 
     return True
 

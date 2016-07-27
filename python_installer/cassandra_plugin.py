@@ -29,8 +29,19 @@ class CassandraInstaller(inst.PluginInstaller):
         utils.print_step('Begin collectd Cassandra plugin installer')
 
     def check_dependency(self):
-        # depends on JNI, but not sure how to check
-        pass
+        utils.print_step('Checking dependency')
+
+        ldd_out = utils.get_command_output(
+            'ldd {}/java.so'.format(self.plugin_dir))
+        for line in ldd_out.split('\n'):
+            libjvm_re = re.search(r'libjvm.so(.*?)not found', line)
+            if libjvm_re is not None:
+                utils.call_command(
+                    'echo Missing libjvm dependency for collectd java plugin '
+                    '>>{log}'.format(log=config.INSTALL_LOG))
+                self.raise_error(
+                    'Missing libjvm dependency for collectd java plugin.')
+        utils.print_success()
 
     def write_plugin(self, out):
         count = 0  # number of server being monitored
@@ -158,14 +169,15 @@ class CassandraInstaller(inst.PluginInstaller):
         utils.cprint()
         utils.cprint(
             'JMXService URL syntax:\n'
-            'service:jmx:rmi:sap\n'
+            '\tservice:jmx:rmi:sap\n'
             'where one of the accepted syntax includes:\n'
-            'service:jmx:rmi:///jndi/rmi://[TARGET_MACHINE]:'
+            '\tservice:jmx:rmi:///jndi/rmi://[TARGET_MACHINE]:'
             '[RMI_REGISTRY_PORT]/jmxrmi\n')
 
 if __name__ == '__main__':
-    cassandra = CassandraInstaller(
-        'DEBIAN', 'java',
-        'wavefront_cassandra.conf')
-    config.INSTALL_LOG = '/dev/null'
-    cassandra.install()
+     cassandra = CassandraInstaller(
+         'DEBIAN', 'java',
+         'wavefront_cassandra.conf')
+     config.INSTALL_LOG = '/dev/null'
+     cassandra.check_dependency()
+    # cassandra.install()
