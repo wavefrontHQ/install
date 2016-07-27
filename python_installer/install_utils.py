@@ -99,6 +99,20 @@ def get_input(prompt, default=None):
     return user_input
 
 
+def prompt_and_check_input(prompt, check_func, usage, default=None):
+    first_prompt = True
+
+    while first_prompt or not check_func(res):
+        if first prompt:
+            first_prompt = False
+        else:
+            utils.eprint(usage)
+
+        res = get_input(prompt, default)
+
+    return res
+
+
 def string_to_num(s):
     try:
         num = int(s)
@@ -277,20 +291,20 @@ def check_valid_port(string):
     try:
         num = int(string)
     except ValueError:
-        utils.eprint(
-            '{} is not a valid port. '
-            'A valid port is a number '
-            'between (0, 65535) inclusive.'.format(string))
         return False
 
     if num < 0 or num > 65535:
-        utils.eprint(
-            '{} is not a valid port. '
-            'A valid port is a number '
-            'between (0, 65535) inclusive.'.format(string))
         return False
 
     return True
+
+
+def hostname_resolves(hostname):
+    try:
+        socket.gethostbyname(hostname)
+        return True
+    except socket.error:
+        return False
 
 
 def is_valid_ipv4_address(address):
