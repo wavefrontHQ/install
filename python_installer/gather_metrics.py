@@ -69,16 +69,28 @@ def port_scan(host, port):
         sock.close()
 
 
-def check_app(output, app):
-    app_re = re.search(r' ({app})\n'.format(app=app), output.decode())
+def check_app(output, app_dict):
+    app_search = app_dict['app_search']
+    app_service = app_dict['service_name']
+
+    app_re = re.search(
+        r' ({app_search})\n'.format(
+            app_search=app_search), output.decode())
     if config.DEBUG:
-        pattern = r' ({app})\n'.format(app=app)
+        pattern = r' ({app_search})\n'.format(app_search=app_search)
         utils.eprint(pattern)
 
     if app_re is None:
+        app_service_name = app_service.split('|')
+        if config.DEBUG:
+            utils.eprint(app_service_name)
+        for name in app_service_name:
+            if utils.check_service(name):
+                return True
+
         return False
-    else:
-        return True
+
+    return True
 
 
 def detect_used_ports():
@@ -104,16 +116,15 @@ def detect_applications():
     Detect and install appropriate collectd plugin
 
     Current collectd plugin support:
-    apache, mysql.
-    Want: nginx, postgres, amcq
+    apache, cassandra, mysql, nginx, postgresql
     This function uses unix command ps -A and check whether
     the supported application is found.
     """
 
     if config.DEBUG:
-        plugins_file = 'support_plugins.json'
+        plugins_file = config.PLUGINS_FILE
     else:
-        plugins_file = '/tmp/app_configure/support_plugins.json'
+        plugins_file = '{}/{}'.format(config.APP_DIR, config.PLUGINS_FILE)
     utils.print_step('Begin app detection')
 
     res = utils.get_command_output('ps -A')
@@ -124,15 +135,20 @@ def detect_applications():
         data_file = open(plugins_file)
     except (IOError, OSError) as e:
         utils.exit_with_message(e)
-    except Exception:
-        utils.exit_with_message('Unexpected error.')
+    except Exception as e:
+        utils.exit_with_message('Unexpected error: {}.'.format(e))
 
-    data = json.load(data_file)
+    try:
+        data = json.load(data_file)
+    finally:
+        data_file.close()
+
     support_dict = collections.OrderedDict(data['data'])
     support_list = []
 
     for app in support_dict:
-        if check_app(res, support_dict[app]['app_search']):
+        app_dict = support_dict[app]
+        if check_app(res, app_dict):
             support_list.append(app)
 
     if len(support_list):
@@ -275,7 +291,10 @@ def check_install_state(app_list):
         empty_state_dict[app] = {}
         empty_state_dict[app]['state'] = NEW
 
-    file_path = config.INSTALL_STATE_FILE_PATH
+    if config.DEBUG:
+        file_path = config.INSTALL_STATE_FILE
+    else:
+        file_path = config.INSTALL_STATE_FILE_PATH
     file_not_found = not utils.check_path_exists(file_path)
 
     try:
@@ -288,7 +307,10 @@ def check_install_state(app_list):
     if file_not_found:
         return empty_state_dict
 
-    data = json.load(install_file)
+    try:
+        data = json.load(install_file)
+    finally:
+        install_file.close()
     data = data['data']
     for app in app_list:
         if app not in data:
@@ -321,8 +343,10 @@ def update_install_state(app_state_dict):
         outfile = None
 
     if outfile is not None:
-        json.dump(json_content, outfile, indent=4)
-        outfile.close()
+        try:
+            json.dump(json_content, outfile, indent=4)
+        finally:
+            outfile.close()
 
 
 def check_option(option, max_length):

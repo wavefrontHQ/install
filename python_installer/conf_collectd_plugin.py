@@ -44,11 +44,6 @@ def check_collectd_conf_dir():
         utils.call_command('mkdir ' + COLLECTD_CONF_DIR)
 
 
-def check_install_state(plugin):
-    utils.cprint('Cannot check install state yet.')
-    return False
-
-
 def write_tcpconns_conf_plugin(open_ports):
     """
     TODO:

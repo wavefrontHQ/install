@@ -53,7 +53,7 @@ COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
 COLLECTD_PLUGINS=(
-    "disk" "netlink" "apache" "mysql" "postgresql" "nginx")
+    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql")
 
 while :
 do
@@ -862,7 +862,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/377168/app_configure.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/386729/app_configure.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
@@ -880,7 +880,7 @@ EOF
                 APP_FINISHED="yes"
             fi
         else
-            exit_with_failure "Python is needed to enable the app configure installation"
+            echo_warning "Python is needed to enable the app configure installation"
         fi
     fi
 
