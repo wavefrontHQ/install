@@ -397,7 +397,7 @@ function check_fqdn() {
         echo
         echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
         echo "FDQN needs to be resolved before the installation."
-        echo "Manual change for hosts file is required."
+        echo "Manual change for hosts file (usually /etc/hosts) is required."
         exit_with_message "Failed to resolve FDQN"
     else
         echo_success
