@@ -67,7 +67,7 @@ class PostgresqlInstaller(inst.PluginInstaller):
         comment = (
             '# Documentation:\n'
             '#   https://collectd.org/wiki/index.php/'
-            'Plugin:PostgreSQL\n\n')
+            'Plugin:PostgreSQL\n')
 
         sample_query_block = (
             '  <Query custom_deadlocks>\n'
@@ -98,43 +98,57 @@ class PostgresqlInstaller(inst.PluginInstaller):
 
         count = 0  # track how many db is monitored
         name_list = []  # keep a list of db name to check for uniqueness
+        db_list = []
 
         utils.cprint()
         utils.print_step('Begin writing PostgresSQL plugin for collectd')
-        out.write(comment)
-        out.write('LoadPlugin "postgresql"\n'
-                  '<Plugin "postgresql">\n'
-                  '{sample_query}\n'.format(
-                      sample_query=sample_query_block))
+        out.write(
+            '{comment}\n'
+            'LoadPlugin "postgresql"\n'
+            '<Plugin "postgresql">\n'
+            '{sample_query}\n'.format(
+                comment=comment,
+                sample_query=sample_query_block))
 
         while utils.ask('Would you like to add a database to monitor?'):
             db = utils.get_input(
                 'What is the name of the database?\n'
                 '(The name should match your database name)')
 
-            iname = utils.get_input(
-                'How would you like to name this monitoring instance?\n'
-                '(How it should appear on your wavefront metric page, \n'
-                'space between words will be removed)').replace(" ", "")
+            iname = utils.prompt_and_check_input(
+                prompt=(
+                    '\nHow would you like to name this monitoring instance?\n'
+                    '(How it should appear on your wavefront metric page, \n'
+                    'space between words will be removed)'),
+                check_func=(
+                    lambda x: x.replace(" ", "") not in name_list),
+                usage=(
+                    '{} has already been used.'.format),
+                usage_fmt=True).replace(" ", "")
 
-            while iname in name_list:
-                utils.cprint(
-                    '{iname} has already been used.'.format(
-                        iname=iname))
-                iname = utils.get_input(
-                    'How would you like to name this monitoring instance?')
+            host = utils.prompt_and_check_input(
+                prompt=(
+                    'What is the hostname or IP of your DB server? '
+                    '(ex: 127.0.0.1)'),
+                check_func=utils.hostname_resolves,
+                usage='{} does not resolve.'.format,
+                usage_fmt=True)
 
-            host = ''
-            while(not utils.is_valid_ipv4_address(host)):
-                host = utils.get_input(
-                    'What is the hostname of your DB server? '
-                    '(ex: 127.0.0.1)')
-
-            port = None
-            while(not utils.check_valid_port(port)):
-                port = utils.get_input(
+            port = utils.prompt_and_check_input(
+                prompt=(
                     'What is the TCP-port used to connect to the host? '
-                    '(ex: 5432)')
+                    '(ex: 5432)'),
+                check_func=utils.check_valid_port,
+                usage=(
+                    'A valid port is a number '
+                    'between (0, 65535) inclusive.\n'))
+
+            if (db, host, port) in db_list:
+                utils.cprint(
+                    'You have already monitored {db} at\n'
+                    '{host}:{port}'.format(
+                        db=db, host=host, port=port))
+                continue
 
             utils.cprint(
                 'Please provide/create an valid account '
@@ -164,6 +178,7 @@ class PostgresqlInstaller(inst.PluginInstaller):
             if res:
                 utils.print_step('Saving instance')
                 name_list.append(iname)
+                db_list.append((db, host, port))
                 count += 1
                 out.write(
                     '  <Database {db}>\n'
@@ -179,6 +194,7 @@ class PostgresqlInstaller(inst.PluginInstaller):
         return count
 
 if __name__ == '__main__':
-    postgres = PostgresqlInstaller('DEBIAN', 'wavefront_postgres.conf')
+    postgres = PostgresqlInstaller(
+        'DEBIAN', 'postgresql', 'wavefront_postgres.conf')
     config.INSTALL_LOG = '/dev/null'
     postgres.install()

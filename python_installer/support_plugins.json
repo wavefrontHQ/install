@@ -32,6 +32,16 @@
           "class_name": "CassandraInstaller",
           "conf_name": "wavefront_cassandra.conf"
       },
+      "memcached": 
+      {
+          "app_search": "memcached",
+          "command": "memcached",
+          "service_name": "memcached",
+          "module": "memcached_plugin",
+          "plugin_name": "memcached",
+          "class_name": "MemcachedInstaller",
+          "conf_name": "wavefront_memcached.conf"
+      },
       "mysql": 
       {
           "app_search": "mysqld",

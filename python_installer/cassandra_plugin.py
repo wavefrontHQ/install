@@ -175,9 +175,9 @@ class CassandraInstaller(inst.PluginInstaller):
             '[RMI_REGISTRY_PORT]/jmxrmi\n')
 
 if __name__ == '__main__':
-     cassandra = CassandraInstaller(
-         'DEBIAN', 'java',
-         'wavefront_cassandra.conf')
-     config.INSTALL_LOG = '/dev/null'
-     cassandra.check_dependency()
+    cassandra = CassandraInstaller(
+        'DEBIAN', 'java',
+        'wavefront_cassandra.conf')
+    config.INSTALL_LOG = '/dev/null'
+    cassandra.check_dependency()
     # cassandra.install()

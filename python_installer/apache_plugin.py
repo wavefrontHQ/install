@@ -123,15 +123,14 @@ class ApacheInstaller(inst.PluginInstaller):
                         conf_dir=conf_dir))
 
     def write_plugin(self, out):
-        utils.print_step('Begin writing apache plugin for collectd')
-        out.write('LoadPlugin "apache"\n')
-        out.write('<Plugin "apache">\n')
-
         count = 0
         server_list = []
         sv_list = []
         overwrite = True
 
+        utils.print_step('Begin writing apache plugin for collectd')
+        out.write('LoadPlugin "apache"\n')
+        out.write('<Plugin "apache">\n')
         self.apache_plugin_usage()
 
         while utils.ask('Would you like to add a server to monitor?'):
@@ -202,10 +201,12 @@ class ApacheInstaller(inst.PluginInstaller):
                     res = utils.ask(
                         'Is this the correct status to monitor?')
                     if res:
+                        utils.print_step('Saving instance')
                         count = count + 1
                         server_list.append(url)
                         sv_list.append(sv_name)
                         out.write(plugin_instance)
+                        utils.print_success()
                     else:
                         utils.cprint('Instance is not saved.')
         out.write('</Plugin>\n')
