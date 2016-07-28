@@ -850,6 +850,7 @@ EOF
             echo
             echo "Keeping the default configuration"
             echo
+            APP_FINISHED="yes"
         fi
     fi
 
@@ -894,6 +895,7 @@ if [ -n "$APP_FINISHED" ]; then
     echo "======================================================================================="
     echo "SUCCESS"
 fi
+
 
 if [ -n "$INSTALL_PROXY" ]; then
     echo
