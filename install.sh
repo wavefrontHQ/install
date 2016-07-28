@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config | --app_configure"
+    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -34,8 +34,6 @@ function usage() {
     echo "          The proxy port to send collectd data to."
     echo "    --overwrite_collectd_config"
     echo "          Overwrite existing collectd configurations in /etc/collectd/"
-    echo "    --app_configure"
-    echo "          Launch the interactive application detection installer"
     echo
 }
 
@@ -48,8 +46,6 @@ TOKEN=""
 PROXY=""
 PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
-APP_CONFIGURE=""
-APP_FINISHED=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
@@ -72,7 +68,6 @@ do
             ;;
         --collectd)
             INSTALL_COLLECTD="yes"
-            APP_CONFIGURE="yes"
             shift
             ;;
         --allow_http)
@@ -97,10 +92,6 @@ do
             ;;
         --overwrite_collectd_config)
             OVERWRITE_COLLECTD_CONFIG="yes"
-            shift
-            ;;
-        --app_configure)
-            APP_CONFIGURE="yes"
             shift
             ;;
         --log)
@@ -398,6 +389,7 @@ function detect_architecture() {
     fi
 }
 
+# check if the fqdn can be resolved locally
 function check_fqdn() {
     echo_step "Checking FQDN"
     echo -e "\nhostname -f" >>${INSTALL_LOG}
@@ -483,7 +475,6 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
     if ask "Do you want to install and configure collectd?" Y; then
         INSTALL_COLLECTD="yes"
-        APP_CONFIGURE="yes"
     fi
     echo_title "Starting installation"
 else
@@ -859,6 +850,7 @@ EOF
             echo
             echo "Keeping the default configuration"
             echo
+            APP_FINISHED="yes"
         fi
     fi
 
@@ -904,12 +896,13 @@ if [ -n "$APP_FINISHED" ]; then
     echo "SUCCESS"
 fi
 
+
 if [ -n "$INSTALL_PROXY" ]; then
     echo
     echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 
-if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ] && [ -n "$APP_FINISHED" ]; then
+if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo
     echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
 fi
