@@ -1,12 +1,47 @@
+from __future__ import print_function
+
 import sys
 import os
 import subprocess
+import random
+import socket
+import string
+import re
+
+# colors for the print
+BLACK = 0
+RED = 1
+GREEN = 2
+YELLOW = 3
+BLUE = 4
+MAGENTA = 5
+CYAN = 6
+
+# http response header
+NOT_AUTH = 401
+NOT_FOUND = 404
+HTTP_OK = 200
+INVALID_URL = -1
 
 
 # input/output utils
+def cinput(*args, **kwargs):
+    """
+    to make input compatible for python2 and 3
+    """
+    cm = sys.modules[__name__]
+
+    try:
+        cm.input = raw_input
+    except NameError:
+        pass
+
+    return input(*args, **kwargs)
+
+
 def ask(question, default='yes'):
     """
-    Ask a yes/no question via raw_input() and return their answer.
+    Ask a yes/no question via input() and return their answer.
 
     source: http://stackoverflow.com/questions/3041986/python-command-line-yes-no-input
     "question" is a string that is presented to the user.
@@ -32,7 +67,7 @@ def ask(question, default='yes'):
 
     while True:
         sys.stdout.write(question + prompt)
-        choice = raw_input().lower().strip()
+        choice = cinput().lower().strip()
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
@@ -53,15 +88,37 @@ def get_input(prompt, default=None):
             '{prompt} (default: {})').format(default, prompt=prompt)
 
     while user_input == '':
-        user_input = raw_input(prompt + '\n').strip()
+        user_input = cinput(prompt + '\n').strip()
 
         if user_input == '':
             if default is not None:
                 user_input = default
             else:
-                print 'The value cannot be blank.'
+                print('The value cannot be blank.')
 
     return user_input
+
+
+def prompt_and_check_input(prompt, check_func, usage, default=None):
+    first_prompt = True
+
+    while first_prompt or not check_func(res):
+        if first prompt:
+            first_prompt = False
+        else:
+            utils.eprint(usage)
+
+        res = get_input(prompt, default)
+
+    return res
+
+
+def string_to_num(s):
+    try:
+        num = int(s)
+    except ValueError:
+        return None
+    return num
 
 
 # helper functions converted from one line script utils to python callable
@@ -70,6 +127,18 @@ def print_warn(msg):
     sys.stdout.write('[ WARNING ]\n')
     call_command('tput sgr0')
     sys.stderr.write(msg + '\n')
+
+
+def print_reminder(msg):
+    call_command('tput setaf 5')  # 5 = magenta
+    sys.stderr.write(msg + '\n')
+    call_command('tput sgr0')
+
+
+def print_color_msg(msg, color):
+    call_command('tput setaf {}'.format(color))
+    sys.stderr.write(msg + '\n')
+    call_command('tput sgr0')
 
 
 def print_failure():
@@ -98,11 +167,11 @@ def print_right(msg):
 
 
 def exit_with_message(msg):
-    sys.stderr.write(msg + '\n')
+    eprint(msg)
     sys.exit(1)
 
 
-def exit_with_failrue(msg):
+def exit_with_failure(msg):
     print_failure()
     exit_with_message(msg)
 
@@ -126,7 +195,21 @@ def command_exists(command):
 
     From install.sh
     """
-    res = call_command('hash ' + command + ' >/dev/null 2>&1')
+    res = call_command(
+        'hash {} > /dev/null 2>&1'.format(command))
+    if res != 0:
+        return False
+    else:
+        return True
+
+
+def check_service(service):
+    """check service status
+
+    return False if return code is not 0
+    """
+    res = call_command(
+        'service {} status > /dev/null 2>&1'.format(service))
     if res != 0:
         return False
     else:
@@ -146,9 +229,12 @@ def get_command_output(command):
 
 
 # utils using os
-def check_path_exists(path, expand=False):
-    if(expand):
+def check_path_exists(path, expand=False, debug=False):
+    if expand:
         path = os.path.expanduser(path)
+
+    if debug:
+        eprint('Checking {}'.format(path))
 
     return os.path.exists(path)
 
@@ -167,11 +253,88 @@ def get_http_status(url):
     status_cmd = 'curl --head -s ' + url + ' | head -n 1'
     return get_command_output(status_cmd)
 
+
+def check_http_response(http_res):
+    http_status_re = re.match('HTTP/1.1 (\d* [\w ]*)\s', http_res)
+    if http_status_re is None:
+        return INVALID_URL
+
+    http_code = http_status_re.group(1)
+
+    if('401 Unauthorized' in http_code):
+        return NOT_AUTH
+    elif('404 Not Found' in http_code):
+        return NOT_FOUND
+    elif('200 OK' in http_code):
+        return HTTP_OK
+    else:
+        return INVALID_URL
+
+
+def cprint(*args, **kwargs):
+    print(*args, **kwargs)
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def random_string(length):
+    pool = string.ascii_letters + string.digits
+    return ''.join(random.choice(pool) for i in range(length))
+
+
+def check_valid_port(string):
+    if string is None:
+        return False
+
+    try:
+        num = int(string)
+    except ValueError:
+        return False
+
+    if num < 0 or num > 65535:
+        return False
+
+    return True
+
+
+def hostname_resolves(hostname):
+    try:
+        socket.gethostbyname(hostname)
+        return True
+    except socket.error:
+        return False
+
+
+def is_valid_ipv4_address(address):
+    """
+    from stack overflow
+
+    source: http://stackoverflow.com/questions/319279/how-to-validate-ip-address-in-python/4017219#4017219
+    """
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except AttributeError:  # no inet_pton here, sorry
+        try:
+            socket.inet_aton(address)
+        except socket.error:
+            return False
+        return address.count('.') == 3
+    except socket.error:  # not a valid address
+        return False
+
+    return True
+
 if __name__ == '__main__':
     print_warn('This is for testing install_utils.py')
+
+    cinput("testing enter")
     ask('Begin testing')
-    print call_command('ls > /dev/null')
-    print command_exists('python')
+    print(call_command('ls > /dev/null'))
+    print(command_exists('python'))
     print_step('Next step is')
     print_warn('REALLY long text'*10)
     get_input('just checking:', 'default')
+    eprint(random_string(64))
+    print(check_path_exists('/var/run/mysqld/mysqld.sock'))

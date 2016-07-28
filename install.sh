@@ -56,6 +56,8 @@ CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
 COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
+COLLECTD_PLUGINS=(
+    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql")
 
 while :
 do
@@ -396,6 +398,39 @@ function detect_architecture() {
     fi
 }
 
+function check_fqdn() {
+    echo_step "Checking FQDN"
+    echo -e "\nhostname -f" >>${INSTALL_LOG}
+    hostname -f >> ${INSTALL_LOG} 2>&1
+    if [ "$?" != 0 ]; then
+        echo_failure
+        echo
+        echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
+        echo "FDQN needs to be resolved before the installation."
+        echo "Manual change is required."
+        exit_with_message "Failed to resolve FDQN"
+    else
+        echo_success
+    fi
+}
+
+# yum_quiet_install() is a helper function that
+# that yum install the array of collectd plugins
+# $1 - arrayname
+function yum_quiet_install() {
+    local _aname=$1[@]
+    local _array=("${!_aname}")
+    for plugin in "${_array[@]}"
+    do
+        echo -e "\nyum -y -q install collectd-$plugin" >>${INSTALL_LOG}
+        yum -y install collectd-$plugin >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to install collectd-$plugin"
+        fi
+    done
+}
+
+
 # main()
 set_install_log
 
@@ -408,6 +443,7 @@ echo_title "Welcome to Wavefront"
 check_if_root_or_die
 detect_architecture
 detect_operating_system
+check_fqdn
 
 if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
@@ -754,16 +790,9 @@ EOF
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to install collectd"
         fi
-        echo -e "\nyum -y -q install collectd-disk" >>${INSTALL_LOG}
-        yum -y install collectd-disk >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-disk"
-        fi
-        echo -e "\nyum -y -q install collectd-netlink" >>${INSTALL_LOG}
-        yum -y install collectd-netlink >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-netlink"
-        fi
+
+        # new plugins installation
+        yum_quiet_install COLLECTD_PLUGINS
         echo_success
         ;;
     esac
@@ -774,6 +803,7 @@ EOF
         if ask "Would you like to overwrite any existing collectd configuration? " N; then
             OVERWRITE_COLLECTD_CONFIG="yes"
         else
+            APP_CONFIGURE="no"
             echo
             echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
             echo "Manual setup is required"
@@ -782,11 +812,6 @@ EOF
     fi
 
     if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
-        hostname -f > /dev/null
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to resolve FDQN"
-        fi
-
         if command_exists wget; then
             FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
         elif command_exists curl; then
@@ -825,48 +850,49 @@ EOF
         service collectd restart >>${INSTALL_LOG} 2>&1
         echo_success
     fi
-fi
 
-if [ -z "$APP_CONFIGURE" ]; then
-    echo
-    if ask "Would you like to configure collectd based on your installed app? " Y; then
-        APP_CONFIGURE="yes"
-    else
+    if [ -z "$APP_CONFIGURE" ]; then
         echo
-        echo "Keeping the default configuration"
-        echo
-    fi
-fi
-
-if [ -n "$APP_CONFIGURE" ]; then
-    if command_exists wget; then
-        FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
-    elif command_exists curl; then
-        FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
-    else
-        exit_with_failure "Either 'wget' or 'curl' are needed"
-    fi
-    echo_step "  Pulling application configuration file"
-    APP_LOCATION="https://github.com/kentwang929/install/files/348741/app_configure.tar.gz"
-    $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
-    echo_success
-    echo_step "  Extracting Configuration Files"
-    if [ ! -d "/tmp/app_configure" ]; then
-        mkdir -p /tmp/app_configure
-    fi
-    tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
-    if [ "$?" != 0 ]; then
-        exit_with_failure "Failed to extract configuration files"
-    fi
-    echo_success
-    if command_exists python; then
-        python /tmp/app_configure/install/gather_metrics.py ${INSTALL_LOG}
-        if [ "$?" == 0 ]; then
-            APP_FINISHED="yes"
+        if ask "Would you like to configure collectd based on your installed app? " Y; then
+            APP_CONFIGURE="yes"
+        else
+            echo
+            echo "Keeping the default configuration"
+            echo
         fi
-    else
-        exit_with_failure "Python is needed to enable the app configure installation"
     fi
+
+    if [ "$APP_CONFIGURE" == "yes" ]; then
+        if command_exists wget; then
+            FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
+        elif command_exists curl; then
+            FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
+        else
+            exit_with_failure "Either 'wget' or 'curl' are needed"
+        fi
+        echo_step "  Pulling application configuration file"
+        APP_LOCATION="https://github.com/kentwang929/install/files/386729/app_configure.tar.gz"
+        $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Extracting Configuration Files"
+        if [ ! -d "/tmp/app_configure" ]; then
+            mkdir -p /tmp/app_configure
+        fi
+        tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to extract configuration files"
+        fi
+        echo_success
+        if command_exists python; then
+            python /tmp/app_configure/gather_metrics.py ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            if [ "$?" == 0 ]; then
+                APP_FINISHED="yes"
+            fi
+        else
+            echo_warning "Python is needed to enable the app configure installation"
+        fi
+    fi
+
 fi
 
 if [ -n "$APP_FINISHED" ]; then
