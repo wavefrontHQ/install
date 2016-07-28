@@ -99,14 +99,26 @@ def get_input(prompt, default=None):
     return user_input
 
 
-def prompt_and_check_input(prompt, check_func, usage, default=None):
+def prompt_and_check_input(
+        prompt, check_func, usage, usage_fmt=False, default=None):
+    """
+    prompt until valid input
+
+    prompt: question to be asked
+    check_func: a function that checks the validity of the response
+    usage: description of valid input
+    default: default argument for the prompt to take
+    """
     first_prompt = True
 
     while first_prompt or not check_func(res):
-        if first prompt:
+        if first_prompt:
             first_prompt = False
         else:
-            utils.eprint(usage)
+            if usage_fmt:
+                eprint(usage(res))
+            else:
+                eprint(usage)
 
         res = get_input(prompt, default)
 

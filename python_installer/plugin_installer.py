@@ -56,14 +56,14 @@ class PluginInstaller(object):
             'Checking if the plugin is installed with '
             'the default collectd package')
 
-        if not utils.check_path_exists(plugin_dir):
+        if not utils.check_path_exists(self.plugin_dir):
             raise Exception(
                 'Collectd plugin directory is '
-                'not found at {}'.format(plugin_dir))
+                'not found at {}'.format(self.plugin_dir))
 
         plugin_mod = self.plugin_name + '.so'
         if utils.check_path_exists(
-          '{}/{}'.format(plugin_dir, plugin_mod)):
+          '{}/{}'.format(self.plugin_dir, plugin_mod)):
             utils.print_success()
         else:
             self.raise_error('Missing {} plugin for collectd'.format(
@@ -129,6 +129,7 @@ class PluginInstaller(object):
         utils.call_command('rm {}'.format(temp_file))
 
     def install(self):
+        class_name = self.__class__.__name__
         try:
             self.title()
             self.overview()
@@ -138,22 +139,22 @@ class PluginInstaller(object):
         except KeyboardInterrupt:
             utils.eprint(
                 'Quitting {}.'.format(
-                    self.__class__.__name__))
+                    class_name))
             return False
         except ex.MissingDependencyError as e:
             utils.eprint(
                 'MissingDependencyError: {}\n'
                 '{} requires the missing dependency '
                 'to continue the installation.'.format(
-                    e, self.__class__.__name__))
+                    e, class_name))
             return False
         except Exception as e:
             utils.eprint(
                 'Error: {}\n'
                 '{} was not installed successfully.'.format(
-                    e, self.__class__.__name__))
+                    e, class_name))
             return False
 
         utils.print_color_msg('{} was installed successfully.'.format(
-            self.__class__.__name__), utils.GREEN)
+            class_name), utils.GREEN)
         return True

@@ -52,7 +52,7 @@ class NginxInstaller(inst.PluginInstaller):
 
         self.plugin_usage()
 
-        while count == 0:
+        while count == 0:  # can only monitor one for this plugin
             url = utils.get_input(
                 'Please enter the url that contains your '
                 'nginx-status:\n(ex: localhost/nginx-status)\n'
