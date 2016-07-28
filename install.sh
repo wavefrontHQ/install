@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config | --app_configure"
+    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -34,8 +34,6 @@ function usage() {
     echo "          The proxy port to send collectd data to."
     echo "    --overwrite_collectd_config"
     echo "          Overwrite existing collectd configurations in /etc/collectd/"
-    echo "    --app_configure"
-    echo "          Launch the interactive application detection installer"
     echo
 }
 
@@ -48,8 +46,6 @@ TOKEN=""
 PROXY=""
 PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
-APP_CONFIGURE=""
-APP_FINISHED=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
@@ -70,7 +66,6 @@ do
             ;;
         --collectd)
             INSTALL_COLLECTD="yes"
-            APP_CONFIGURE="yes"
             shift
             ;;
         --allow_http)
@@ -95,10 +90,6 @@ do
             ;;
         --overwrite_collectd_config)
             OVERWRITE_COLLECTD_CONFIG="yes"
-            shift
-            ;;
-        --app_configure)
-            APP_CONFIGURE="yes"
             shift
             ;;
         --log)
@@ -396,6 +387,23 @@ function detect_architecture() {
     fi
 }
 
+# check if the fqdn can be resolved locally
+function check_fqdn() {
+    echo_step "Checking FQDN"
+    echo -e "\nhostname -f" >>${INSTALL_LOG}
+    hostname -f >> ${INSTALL_LOG} 2>&1
+    if [ "$?" != 0 ]; then
+        echo_failure
+        echo
+        echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
+        echo "FDQN needs to be resolved before the installation."
+        echo "Manual change for hosts file is required."
+        exit_with_message "Failed to resolve FDQN"
+    else
+        echo_success
+    fi
+}
+
 # main()
 set_install_log
 
@@ -408,6 +416,7 @@ echo_title "Welcome to Wavefront"
 check_if_root_or_die
 detect_architecture
 detect_operating_system
+check_fqdn
 
 if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
@@ -447,7 +456,6 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
     if ask "Do you want to install and configure collectd?" Y; then
         INSTALL_COLLECTD="yes"
-        APP_CONFIGURE="yes"
     fi
     echo_title "Starting installation"
 else
@@ -782,11 +790,6 @@ EOF
     fi
 
     if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
-        hostname -f > /dev/null
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to resolve FDQN"
-        fi
-
         if command_exists wget; then
             FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
         elif command_exists curl; then
@@ -827,63 +830,16 @@ EOF
     fi
 fi
 
-if [ -z "$APP_CONFIGURE" ]; then
-    echo
-    if ask "Would you like to configure collectd based on your installed app? " Y; then
-        APP_CONFIGURE="yes"
-    else
-        echo
-        echo "Keeping the default configuration"
-        echo
-    fi
-fi
-
-if [ -n "$APP_CONFIGURE" ]; then
-    if command_exists wget; then
-        FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
-    elif command_exists curl; then
-        FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
-    else
-        exit_with_failure "Either 'wget' or 'curl' are needed"
-    fi
-    echo_step "  Pulling application configuration file"
-    APP_LOCATION="https://github.com/kentwang929/install/files/348741/app_configure.tar.gz"
-    $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
-    echo_success
-    echo_step "  Extracting Configuration Files"
-    if [ ! -d "/tmp/app_configure" ]; then
-        mkdir -p /tmp/app_configure
-    fi
-    tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
-    if [ "$?" != 0 ]; then
-        exit_with_failure "Failed to extract configuration files"
-    fi
-    echo_success
-    if command_exists python; then
-        python /tmp/app_configure/install/gather_metrics.py ${INSTALL_LOG}
-        if [ "$?" == 0 ]; then
-            APP_FINISHED="yes"
-        fi
-    else
-        exit_with_failure "Python is needed to enable the app configure installation"
-    fi
-fi
-
-if [ -n "$APP_FINISHED" ]; then
-    echo_step "  Restarting collectd"
-    service collectd restart >>${INSTALL_LOG} 2>&1
-    echo_success
-    echo
-    echo "======================================================================================="
-    echo "SUCCESS"
-fi
+echo
+echo "======================================================================================="
+echo "SUCCESS"
 
 if [ -n "$INSTALL_PROXY" ]; then
     echo
     echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 
-if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ] && [ -n "$APP_FINISHED" ]; then
+if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo
     echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
 fi
