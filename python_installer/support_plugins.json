@@ -71,6 +71,16 @@
           "plugin_name": "postgresql",
           "class_name": "PostgresqlInstaller",
           "conf_name": "wavefront_postgres.conf"
+      },
+      "redis":
+      {
+          "app_search": "redis-server",
+          "command": "redis-cli",
+          "service_name": "redis-server",
+          "module": "redis_plugin",
+          "plugin_name": "python",
+          "class_name": "RedisInstaller",
+          "conf_name": "wavefront_redis.conf"
       }
   }
 }

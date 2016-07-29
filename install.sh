@@ -57,7 +57,7 @@ COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
 COLLECTD_PLUGINS=(
-    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql")
+    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
 
 while :
 do
@@ -407,7 +407,7 @@ function check_fqdn() {
         echo
         echo -e "\nFDQN needs to be resolved before the installation." >>${INSTALL_LOG}
         echo "FDQN needs to be resolved before the installation."
-        echo "Manual change is required."
+        echo "Manual change for hosts file (usually /etc/hosts) is required."
         exit_with_message "Failed to resolve FDQN"
     else
         echo_success
@@ -871,7 +871,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/389193/app_configure.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/391588/app_configure.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
