@@ -263,8 +263,9 @@ def installer_menu(app_list, support_dict):
                     'the installer?')
                 if confirm:
                     Installer = getattr(
-                        importlib.import_module(app['module']),
-                        app['class_name'])
+                        importlib.import_module(
+                            app['module']),
+                            app['class_name'])
                     instance = Installer(
                         config.OPERATING_SYSTEM,
                         app['plugin_name'],
@@ -382,6 +383,9 @@ if __name__ == '__main__':
     else:
         utils.eprint('Invalid arguments.')
         sys.exit(1)
+
+    if config.DEBUG:
+        utils.print_warn('DEBUG IS ON')
 
     (s_list, s_dict) = detect_applications()
 

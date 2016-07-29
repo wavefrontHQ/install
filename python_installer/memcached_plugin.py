@@ -42,15 +42,16 @@ class MemcachedInstaller(inst.PluginInstaller):
         out.write('<Plugin "memcached">\n')
 
         while utils.ask('Would you like to add a server to monitor?'):
-            iname = utils.get_input(
-                'How would you like to name this monitoring instance?\n'
-                '(How it should appear on your wavefront metric page, \n'
-                'space between words will be removed)').replace(" ", "")
-
-            if iname in iname_list:
-                utils.cprint('You have already used {}.'.format(
-                    iname))
-                continue
+            iname = utils.prompt_and_check_input(
+                prompt=(
+                    '\nHow would you like to name this monitoring instance?\n'
+                    '(How it should appear on your wavefront metric page, \n'
+                    'space between words will be removed)'),
+                check_func=(
+                    lambda x: x.replace(" ", "") not in name_list),
+                usage=(
+                    '{} has already been used.'.format),
+                usage_fmt=True).replace(" ", "")
 
             host = utils.prompt_and_check_input(
                 prompt=(
