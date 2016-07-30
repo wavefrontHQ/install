@@ -1,0 +1,86 @@
+{
+  "_comment": {
+      "standard_format": "see below",
+      "APP_NAME": {
+          "app_search": "search_name",
+          "command": "commands that came with the app",
+          "service_name": "service name that works with service command",
+          "module": "python_module_name",
+          "plugin_name": "collectd_plugin_name",
+          "class_name": "installer_name",
+          "conf_name": "plugin_conf_filename"
+      }
+  },
+  "data": {
+      "apache":
+      {
+          "app_search": "apache2|httpd",
+          "command": "apache2|httpd",
+          "service_name": "apache2|httpd",
+          "module": "apache_plugin",
+          "plugin_name": "apache",
+          "class_name": "ApacheInstaller",
+          "conf_name": "wavefront_apache.conf"
+      },
+      "cassandra":
+      {
+          "app_search": "cassandra",
+          "command": "cassandra|nodetool",
+          "service_name": "cassandra",
+          "module": "cassandra_plugin",
+          "plugin_name": "java",
+          "class_name": "CassandraInstaller",
+          "conf_name": "wavefront_cassandra.conf"
+      },
+      "memcached": 
+      {
+          "app_search": "memcached",
+          "command": "memcached",
+          "service_name": "memcached",
+          "module": "memcached_plugin",
+          "plugin_name": "memcached",
+          "class_name": "MemcachedInstaller",
+          "conf_name": "wavefront_memcached.conf"
+      },
+      "mysql": 
+      {
+          "app_search": "mysqld",
+          "command": "mysql|mysqld",
+          "service_name": "mysql|mysqld",
+          "module": "mysql_plugin",
+          "plugin_name": "mysql",
+          "class_name": "MySQLInstaller",
+          "conf_name": "wavefront_mysql.conf"
+      },
+      "nginx":
+      {
+          "app_search": "nginx",
+          "command": "nginx",
+          "service_name": "nginx",
+          "module": "nginx_plugin",
+          "plugin_name": "nginx",
+          "class_name": "NginxInstaller",
+          "conf_name": "wavefront_nginx.conf"
+      },
+      "postgresql":
+      {
+          "app_search": "postgres",
+          "command": "psql",
+          "service_name": "postgresql",
+          "module": "postgresql_plugin",
+          "plugin_name": "postgresql",
+          "class_name": "PostgresqlInstaller",
+          "conf_name": "wavefront_postgres.conf"
+      },
+      "redis":
+      {
+          "app_search": "redis-server",
+          "command": "redis-cli",
+          "service_name": "redis-server",
+          "module": "redis_plugin",
+          "plugin_name": "python",
+          "class_name": "RedisInstaller",
+          "conf_name": "wavefront_redis.conf"
+      }
+  }
+}
