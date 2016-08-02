@@ -822,7 +822,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Configuring collectd"
-        $FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
+        $FETCHER https://github.com/kentwang929/install/files/394998/default_collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
         if [ ! -d "/etc/collectd" ]; then
@@ -875,7 +875,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/391588/app_configure.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/394980/app_configure.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
@@ -899,7 +899,7 @@ EOF
 
 fi
 
-if [ -n "$APP_FINISHED" ]; then
+if [ "$APP_FINISHED" == "yes" ]; then
     echo_step "  Restarting collectd"
     service collectd restart >>${INSTALL_LOG} 2>&1
     echo_success

@@ -4,7 +4,6 @@
       "APP_NAME": {
           "app_search": "search_name",
           "command": "commands that came with the app",
-          "service_name": "service name that works with service command",
           "module": "python_module_name",
           "plugin_name": "collectd_plugin_name",
           "class_name": "installer_name",
@@ -16,7 +15,6 @@
       {
           "app_search": "apache2|httpd",
           "command": "apache2|httpd",
-          "service_name": "apache2|httpd",
           "module": "apache_plugin",
           "plugin_name": "apache",
           "class_name": "ApacheInstaller",
@@ -24,9 +22,8 @@
       },
       "cassandra":
       {
-          "app_search": "cassandra",
+          "app_search": "org.apache.cassandra",
           "command": "cassandra|nodetool",
-          "service_name": "cassandra",
           "module": "cassandra_plugin",
           "plugin_name": "java",
           "class_name": "CassandraInstaller",
@@ -36,7 +33,6 @@
       {
           "app_search": "memcached",
           "command": "memcached",
-          "service_name": "memcached",
           "module": "memcached_plugin",
           "plugin_name": "memcached",
           "class_name": "MemcachedInstaller",
@@ -46,7 +42,6 @@
       {
           "app_search": "mysqld",
           "command": "mysql|mysqld",
-          "service_name": "mysql|mysqld",
           "module": "mysql_plugin",
           "plugin_name": "mysql",
           "class_name": "MySQLInstaller",
@@ -56,7 +51,6 @@
       {
           "app_search": "nginx",
           "command": "nginx",
-          "service_name": "nginx",
           "module": "nginx_plugin",
           "plugin_name": "nginx",
           "class_name": "NginxInstaller",
@@ -64,9 +58,8 @@
       },
       "postgresql":
       {
-          "app_search": "postgres",
+          "app_search": "postgresql",
           "command": "psql",
-          "service_name": "postgresql",
           "module": "postgresql_plugin",
           "plugin_name": "postgresql",
           "class_name": "PostgresqlInstaller",
@@ -76,11 +69,19 @@
       {
           "app_search": "redis-server",
           "command": "redis-cli",
-          "service_name": "redis-server",
           "module": "redis_plugin",
           "plugin_name": "python",
           "class_name": "RedisInstaller",
           "conf_name": "wavefront_redis.conf"
+      },
+      "zookeeper":
+      {
+          "app_search": "org.apache.zookeeper",
+          "command": "None",
+          "module": "zookeeper_plugin",
+          "plugin_name": "zookeeper",
+          "class_name": "ZookeeperInstaller",
+          "conf_name": "wavefront_zookeeper.conf"
       }
   }
 }

@@ -112,7 +112,7 @@ class ApacheInstaller(inst.PluginInstaller):
                         app_name=app_name,
                         log=config.INSTALL_LOG))
                 if ret != 0:
-                    self.raise_error(
+                    raise Exception(
                         'Failed to restart apache service.')
                 utils.print_success()
             else:
@@ -233,12 +233,9 @@ class ApacheInstaller(inst.PluginInstaller):
         Assume extendedstatus.conf is unique to wavefront and writing over it.
         """
         filename = 'extendedstatus.conf'
-        out = utils.write_file('{conf_dir}/{filename}'.format(
-                  conf_dir=conf_dir, filename=filename))
-        if out is None:
-            utils.exit_with_message('Unexpected error!')
-
-        out.write(
+        filepath = '{conf_dir}/{filename}'.format(
+                  conf_dir=conf_dir, filename=filename)
+        content = (
             '# ExtendedStatus controls whether Apache will generate '
             '"full" status\n'
             '# information (ExtendedStatus On) '
@@ -246,7 +243,8 @@ class ApacheInstaller(inst.PluginInstaller):
             '# Off) when the "server-status" handler is called. '
             'The default is Off.\n'
             'ExtendedStatus on')
-        out.close()
+
+        out = utils.write_file(filepath, content)
 
     def apache_plugin_usage(self):
         utils.cprint(

@@ -70,31 +70,38 @@ def port_scan(host, port):
 
 
 def check_app(output, app_dict):
+    """
+    return true if the app exists
+
+    checks if the keyword from support_plugins can be matched
+    in ps -ef output.
+    if not, check if the command matches
+    """
     app_search = app_dict['app_search']
-    app_service = app_dict['service_name']
     app_cmds = app_dict['command'].split('|')
 
-    app_re = re.search(
-        r' ({app_search})\n'.format(
-            app_search=app_search), output.decode())
-    if config.DEBUG:
-        pattern = r' ({app_search})\n'.format(app_search=app_search)
-        utils.eprint(pattern)
+#    app_re = re.search(
+#        r' ({app_search})\n'.format(
+#            app_search=app_search), output.decode())
+
+    for line in output.split('\n'):
+        app_re = re.search(
+            r'({app_search})'.format(
+                app_search=app_search), line)
+        if app_re is not None:
+            if config.DEBUG:
+                utils.eprint(line)
+            return True
 
     if app_re is None:
         for cmd in app_cmds:
             if config.DEBUG:
-                utils.eprint(cmd)
-            if utils.command_exists(cmd):
+                utils.eprint('Command:',cmd)
+            if cmd == "None":
+                return False
+            elif utils.command_exists(cmd):
                 return True
         return False
-
-    #     app_service_name = app_service.split('|')
-    #     if config.DEBUG:
-    #         utils.eprint(app_service_name)
-    #     for name in app_service_name:
-    #         if utils.check_service(name):
-    #             return True
 
     return True
 
@@ -123,7 +130,7 @@ def detect_applications():
 
     Current collectd plugin support:
     apache, cassandra, mysql, nginx, postgresql
-    This function uses unix command ps -A and check whether
+    This function uses unix command ps -ef and check whether
     the supported application is found.
     """
 
@@ -133,7 +140,7 @@ def detect_applications():
         plugins_file = '{}/{}'.format(config.APP_DIR, config.PLUGINS_FILE)
     utils.print_step('Begin app detection')
 
-    res = utils.get_command_output('ps -A')
+    res = utils.get_command_output('ps -ef')
     if res is None:
         utils.exit_with_message('Unable to read process off the machine')
 
@@ -184,6 +191,7 @@ def installer_menu(app_list, support_dict):
     """
     exit_cmd = [
         'quit', 'q', 'exit']
+    count = 0
 
     # the format of each row in installing menu
     menu_rowf = (
@@ -272,6 +280,7 @@ def installer_menu(app_list, support_dict):
                         app['conf_name'])
                     if instance.install():
                         install_state[app_list[option]]['state'] = INSTALLED
+                        count += 1
                     else:
                         install_state[app_list[option]]['state'] = INCOMPLETE
                     install_state[app_list[option]]['date'] = '{:%c}'.format(
@@ -279,6 +288,7 @@ def installer_menu(app_list, support_dict):
                     update_install_state(install_state)
             else:
                 utils.print_reminder('Invalid option.')
+    return count
 
 
 def check_install_state(app_list):
@@ -390,7 +400,11 @@ if __name__ == '__main__':
     (s_list, s_dict) = detect_applications()
 
     try:
-        installer_menu(s_list, s_dict)
+        if installer_menu(s_list, s_dict):
+            sys.exit(0)
+        else:
+            sys.exit(1)
     except KeyboardInterrupt:
         utils.eprint('\nQuitting the installer via keyboard interrupt.')
         sys.exit(1)
+

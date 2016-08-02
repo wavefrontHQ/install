@@ -35,7 +35,6 @@ class MemcachedInstaller(inst.PluginInstaller):
         count = 0  # number of server being monitored
         iname_list = []
         server_list = []
-        first_prompt = True
 
         utils.print_step('Begin writing memcached plugin for collectd')
         out.write('LoadPlugin "memcached"\n')
@@ -48,7 +47,7 @@ class MemcachedInstaller(inst.PluginInstaller):
                     '(How it should appear on your wavefront metric page, \n'
                     'space between words will be removed)'),
                 check_func=(
-                    lambda x: x.replace(" ", "") not in name_list),
+                    lambda x: x.replace(" ", "") not in iname_list),
                 usage=(
                     '{} has already been used.'.format),
                 usage_fmt=True).replace(" ", "")

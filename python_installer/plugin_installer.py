@@ -41,9 +41,6 @@ class PluginInstaller(object):
         raise NotImplementedError()
 
     # helper methods
-    def get_conf_name(self):
-        return self.conf_name
-
     def raise_error(self, msg):
         raise ex.MissingDependencyError(msg)
 
@@ -78,27 +75,26 @@ class PluginInstaller(object):
         successfully, then it will be copied over to the correct place.
         """
         temp_file = 'wavefront_temp_{0}.conf'.format(utils.random_string(7))
-        out = utils.write_file(temp_file)
-        error = False
-        if out is None:
-            utils.exit_with_message('')
+        error = None
 
         try:
-            res = self.write_plugin(out)
-        except KeyboardInterrupt as k:
-            error = True
-            raise k
-        except Exception as e:
-            utils.eprint(
-                'Error: {}\n'
-                'Unexpected flow.'.format(e))
-            error = True
-        finally:
-            out.close()
-            if error:
-                utils.eprint('\nClosing and removing temp file.\n')
-                utils.call_command('rm ' + temp_file)
-                raise KeyboardInterrupt
+            with open(temp_file, 'w') as out:
+                try:
+                    res = self.write_plugin(out)
+                except KeyboardInterrupt as e:
+                    error = e
+                except Exception as e:
+                    error = e
+                finally:
+                    if error:
+                        utils.eprint('\nClosing and removing temp file.\n')
+                        utils.call_command('rm ' + temp_file)
+                        raise error
+        except (IOError, OSError) as e:
+            utils.eprint('Cannot open {}'.format(filepath))
+            raise Exception(
+                  'Error: {}\n'
+                  'Cannot open {}.'.format(e, filepath))
 
         # if there was at least one instance being monitor
         if res:
@@ -121,7 +117,7 @@ class PluginInstaller(object):
                         config.COLLECTD_CONF_DIR))
             else:
                 utils.call_command('rm {}'.format(temp_file))
-                utils.exit_with_message('Failed to copy the plugin file.\n')
+                raise Exception('Failed to copy the plugin file.\n')
         else:
             utils.call_command('rm {}'.format(temp_file))
             raise Exception('You did not provide any instance to monitor.\n')
@@ -136,10 +132,11 @@ class PluginInstaller(object):
             self.check_plugin()
             self.check_dependency()
             self.clean_plugin_write()
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
             utils.eprint(
                 'Quitting {}.'.format(
                     class_name))
+            utils.append_to_log(e, config.INSTALL_LOG)
             return False
         except ex.MissingDependencyError as e:
             utils.eprint(
@@ -147,12 +144,14 @@ class PluginInstaller(object):
                 '{} requires the missing dependency '
                 'to continue the installation.'.format(
                     e, class_name))
+            utils.append_to_log(e, config.INSTALL_LOG)
             return False
         except Exception as e:
             utils.eprint(
                 'Error: {}\n'
                 '{} was not installed successfully.'.format(
                     e, class_name))
+            utils.append_to_log(e, config.INSTALL_LOG)
             return False
 
         utils.print_color_msg('{} was installed successfully.'.format(

@@ -36,7 +36,12 @@ def cinput(*args, **kwargs):
     except NameError:
         pass
 
-    return input(*args, **kwargs)
+    try:
+        res = input(*args, **kwargs)
+    except EOFError:
+        res = ''
+
+    return res
 
 
 def ask(question, default='yes'):
@@ -68,6 +73,7 @@ def ask(question, default='yes'):
     while True:
         sys.stdout.write(question + prompt)
         choice = cinput().lower().strip()
+
         if default is not None and choice == '':
             return valid[default]
         elif choice in valid:
@@ -94,7 +100,7 @@ def get_input(prompt, default=None):
             if default is not None:
                 user_input = default
             else:
-                print('The value cannot be blank.')
+                cprint('The value cannot be blank.')
 
     return user_input
 
@@ -215,19 +221,6 @@ def command_exists(command):
         return True
 
 
-def check_service(service):
-    """check service status
-
-    return False if return code is not 0
-    """
-    res = call_command(
-        'service {} status > /dev/null 2>&1'.format(service))
-    if res != 0:
-        return False
-    else:
-        return True
-
-
 def get_command_output(command):
     try:
         res = subprocess.check_output(
@@ -238,6 +231,14 @@ def get_command_output(command):
         res = None
 
     return res
+
+
+def append_to_log(msg, log):
+    res = call_command(
+        'echo -e "\n{msg}" >> {log}'.format(
+            msg=msg, log=log))
+    if res != 0:
+        exit_with_message('Failed to write to log.')
 
 
 # utils using os
@@ -252,13 +253,14 @@ def check_path_exists(path, expand=False, debug=False):
 
 
 # Other helpers
-def write_file(filename):
+def write_file(filepath, msg):
     try:
-        out = open(filename, 'w')
-    except:
-        sys.stderr.write('Unable to write %s.\n' % filename)
-        out = None
-    return out
+        with open(filepath, 'w') as out:
+            out.write(msg)
+    except (IOError, OSError) as e:
+        raise Exception(
+              '{}\n'
+              'Cannot open {}.'.format(e, filepath))
 
 
 def get_http_status(url):

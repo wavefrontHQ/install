@@ -82,9 +82,7 @@ class CassandraInstaller(inst.PluginInstaller):
                 'Is the above information correct?')
             if res:
                 # pull and edit the conf file
-                if not self.edit_cass_conf(out, plugin_instance):
-                    raise Exception(
-                          'Unable to write wavefront_cassandra_file.')
+                self.edit_cass_conf(out, plugin_instance)
                 count += 1
             else:
                 url = None
@@ -98,7 +96,6 @@ class CassandraInstaller(inst.PluginInstaller):
         -replace ServiceURL line
         -close the read file
         """
-        res = True
         if config.DEBUG:
             filepath = '{conf_dir}/{conf_name}'.format(
                 conf_dir=config.PLUGIN_CONF_DIR,
@@ -119,10 +116,10 @@ class CassandraInstaller(inst.PluginInstaller):
                     else:
                         out.write(plugin_instance)
         except (IOError, OSError) as e:
-            utils.eprint('Cannot open file at {}'.format(filepath))
-            res = False
-
-        return res
+            utils.eprint('Cannot open {}'.format(filepath))
+            raise Exception(
+                  'Error: {}\n'
+                  'Cannot open {}.'.format(e, filepath))
 
     def check_JMXServiceURL(self, url):
         if url is None:
