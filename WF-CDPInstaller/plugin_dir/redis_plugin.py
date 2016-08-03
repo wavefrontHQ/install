@@ -1,23 +1,23 @@
-import install_utils as utils
-import plugin_installer as inst
-import config
+import common.install_utils as utils
+import plugin_dir.plugin_installer as inst
+import common.config as config
 
 
 class RedisInstaller(inst.PluginInstaller):
     def title(self):
         utils.cprint(
-            ",-.----.                                              \n" 
-            "\    /  \                  ,---,  ,--,                \n" 
-            ";   :    \               ,---.'|,--.'|                \n" 
-            "|   | .\ :               |   | :|  |,      .--.--.    \n" 
-            ".   : |: |    ,---.      |   | |`--'_     /  /    '   \n" 
-            "|   |  \ :   /     \   ,--.__| |,' ,'|   |  :  /`./   \n" 
-            "|   : .  /  /    /  | /   ,'   |'  | |   |  :  ;_     \n" 
-            ";   | |  \ .    ' / |.   '  /  ||  | :    \  \    `.  \n" 
-            "|   | ;\  \\'   ;   /|'   ; |:  |'  : |__   `----.   \ \n" 
-            ":   ' | \.''   |  / ||   | '/  '|  | '.'| /  /`--'  / \n" 
-            ":   : :-'  |   :    ||   :    :|;  :    ;'--'.     /  \n" 
-            "|   |.'     \   \  /  \   \  /  |  ,   /   `--'---'   \n" 
+            ",-.----.                                              \n"
+            "\    /  \                  ,---,  ,--,                \n"
+            ";   :    \               ,---.'|,--.'|                \n"
+            "|   | .\ :               |   | :|  |,      .--.--.    \n"
+            ".   : |: |    ,---.      |   | |`--'_     /  /    '   \n"
+            "|   |  \ :   /     \   ,--.__| |,' ,'|   |  :  /`./   \n"
+            "|   : .  /  /    /  | /   ,'   |'  | |   |  :  ;_     \n"
+            ";   | |  \ .    ' / |.   '  /  ||  | :    \  \    `.  \n"
+            "|   | ;\  \\'   ;   /|'   ; |:  |'  : |__   `----.   \ \n"
+            ":   ' | \.''   |  / ||   | '/  '|  | '.'| /  /`--'  / \n"
+            ":   : :-'  |   :    ||   :    :|;  :    ;'--'.     /  \n"
+            "|   |.'     \   \  /  \   \  /  |  ,   /   `--'---'   \n"
             "`---'        `----'    `----'    ---`-'               \n")
 
     def overview(self):
@@ -119,7 +119,7 @@ class RedisInstaller(inst.PluginInstaller):
             else:
                 utils.print_failure()
                 raise Exception('Unable to create directory.')
-                
+
         utils.print_step(
             '  Moving python plugin')
         res = utils.call_command(
@@ -130,7 +130,7 @@ class RedisInstaller(inst.PluginInstaller):
         else:
             utils.print_failure()
             raise Exception('Failed to move the plugin.')
-            
+
         utils.print_step('Begin writing redis configuration for collectd')
         # pull comment and append to it
         if not self.pull_comment(out):

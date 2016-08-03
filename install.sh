@@ -58,6 +58,7 @@ PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
 COLLECTD_PLUGINS=(
     "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
+APP_CONFIGURE_NAME="WF-CDPInstaller-1.0.0dev"
 
 while :
 do
@@ -868,27 +869,28 @@ EOF
 
     if [ "$APP_CONFIGURE" == "yes" ]; then
         if command_exists wget; then
-            FETCHER="wget --quiet -O /tmp/app_configure.tar.gz"
+            FETCHER="wget --quiet -O /tmp/WF-CDPInstaller.tar.gz"
         elif command_exists curl; then
-            FETCHER="curl -L --silent -o /tmp/app_configure.tar.gz"
+            FETCHER="curl -L --silent -o /tmp/WF-CDPInstaller.tar.gz"
         else
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/394980/app_configure.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/400050/WF-CDPInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
-        if [ ! -d "/tmp/app_configure" ]; then
-            mkdir -p /tmp/app_configure
+        if [ ! -d "/tmp/WF-CDPInstaller" ]; then
+            mkdir -p /tmp/WF-CDPInstaller
         fi
-        tar -xf /tmp/app_configure.tar.gz -C /tmp/app_configure >>${INSTALL_LOG} 2>&1
+        tar -xf /tmp/WF-CDPInstaller.tar.gz -C /tmp/WF-CDPInstaller >>${INSTALL_LOG} 2>&1
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to extract configuration files"
         fi
         echo_success
         if command_exists python; then
-            python /tmp/app_configure/gather_metrics.py ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            cd /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME
+            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} ${INSTALL_LOG}
             if [ "$?" == 0 ]; then
                 APP_FINISHED="yes"
             fi
@@ -917,4 +919,11 @@ fi
 if [ -n "$INSTALL_COLLECTD" ] && [ "$APP_FINISHED" == "yes" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo
     echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
+fi
+
+if [ "$APP_CONFIGURE" == "yes" ]; then
+    echo "To restart WF-CDPInstaller"
+    echo "Navigate to /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME and type"
+    echo "python -m python_installer.gather_metrics"
+    echo "Restart the collectd service afterward to see the change"
 fi

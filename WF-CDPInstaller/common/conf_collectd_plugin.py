@@ -1,11 +1,7 @@
 import sys
-import re
 
-import install_utils as utils
-import config
-
-COLLECTD_HOME = '/etc/collectd'
-COLLECTD_CONF_DIR = COLLECTD_HOME + '/managed_config'
+import common.install_utils as utils
+import common.config as config
 
 
 def check_collectd_exists():
@@ -22,7 +18,7 @@ def check_collectd_path():
     utils.print_step(
         '  Checking if collectd is installed in our specified '
         'directory')
-    res = utils.check_path_exists(COLLECTD_HOME)
+    res = utils.check_path_exists(config.COLLECTD_HOME)
     if not res:
         sys.stderr.write(
             'Collectd was not found at our '
@@ -38,10 +34,10 @@ def check_collectd_conf_dir():
     Check if managed_config directory exists, if not,
     create one.
     """
-    res = utils.check_path_exists(COLLECTD_CONF_DIR)
+    res = utils.check_path_exists(config.COLLECTD_CONF_DIR)
     if not res:
         utils.cprint('Creating collectd managed config dir')
-        utils.call_command('mkdir ' + COLLECTD_CONF_DIR)
+        utils.call_command('mkdir ' + config.COLLECTD_CONF_DIR)
 
 
 def write_tcpconns_conf_plugin(open_ports):
@@ -76,5 +72,5 @@ def write_tcpconns_conf_plugin(open_ports):
 
 if __name__ == '__main__':
     utils.print_warn('This is for testing conf_collected_plugin.py')
-    utils.cprint(COLLECTD_HOME)
-    utils.cprint(COLLECTD_CONF_DIR)
+    utils.cprint(config.COLLECTD_HOME)
+    utils.cprint(config.COLLECTD_CONF_DIR)

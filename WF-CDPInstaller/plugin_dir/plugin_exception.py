@@ -1,4 +1,4 @@
-import install_utils as utils
+import common.install_utils as utils
 
 
 class MissingDependencyError(Exception):

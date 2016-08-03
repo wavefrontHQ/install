@@ -1,6 +1,6 @@
-import plugin_installer as inst
-import install_utils as utils
-import config
+import common.install_utils as utils
+import plugin_dir.plugin_installer as inst
+import common.config as config
 
 
 class PostgresqlInstaller(inst.PluginInstaller):

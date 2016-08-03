@@ -1,6 +1,6 @@
-import install_utils as utils
-import config
-import plugin_exception as ex
+import common.install_utils as utils
+import common.config as config
+import plugin_dir.plugin_exception as ex
 
 
 class PluginInstaller(object):

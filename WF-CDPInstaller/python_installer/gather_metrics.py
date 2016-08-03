@@ -21,9 +21,9 @@ import importlib
 import json
 import collections
 
-import conf_collectd_plugin as conf
-import install_utils as utils
-import config
+import common.conf_collectd_plugin as conf
+import common.install_utils as utils
+import common.config as config
 
 # Python required base version
 REQ_VERSION = (2, 7)
@@ -84,7 +84,7 @@ def check_app(output, app_dict):
 #        r' ({app_search})\n'.format(
 #            app_search=app_search), output.decode())
 
-    for line in output.split('\n'):
+    for line in output.decode().split('\n'):
         app_re = re.search(
             r'({app_search})'.format(
                 app_search=app_search), line)
@@ -96,7 +96,7 @@ def check_app(output, app_dict):
     if app_re is None:
         for cmd in app_cmds:
             if config.DEBUG:
-                utils.eprint('Command:',cmd)
+                utils.eprint('Command: {}'.format(cmd))
             if cmd == "None":
                 return False
             elif utils.command_exists(cmd):
@@ -272,8 +272,10 @@ def installer_menu(app_list, support_dict):
                 if confirm:
                     Installer = getattr(
                         importlib.import_module(
-                            app['module']),
-                            app['class_name'])
+                            '{direc}.{mod}'.format(
+                                direc='plugin_dir',
+                                mod=app['module'])),
+                        app['class_name'])
                     instance = Installer(
                         config.OPERATING_SYSTEM,
                         app['plugin_name'],
@@ -407,4 +409,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         utils.eprint('\nQuitting the installer via keyboard interrupt.')
         sys.exit(1)
-
