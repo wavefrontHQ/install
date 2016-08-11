@@ -17,21 +17,32 @@ class PluginInstaller(object):
       write_plugin():
           - write the actual plugin file
     """
-    def __init__(self, os, plugin_name, conf_name):
+    def __init__(self, os, agent, plugin_name, conf_name):
         self.os = os
+        self.agent = agent
         self.plugin_name = plugin_name
         self.conf_name = conf_name
-        self.plugin_dir = 'NOT SET'
+
+        if self.agent == config.COLLECTD:
+            self.conf_dir = config.COLLECTD_CONF_DIR
+        elif self.agent == config.TELEGRAF:
+            self.conf_dir = config.TELEGRAF_CONF_DIR
+        else:
+            self.conf_dir = 'NOT SET'
+
         if self.os == config.REDHAT:
             self.plugin_dir = '/usr/lib64/collectd'
         elif self.os == config.DEBIAN:
             self.plugin_dir = '/usr/lib/collectd'
+        else:
+            self.plugin_dir = 'NOT SET'
 
     # methods that subclasses need to implement
     def title(self):
         """
         A nice stdout ascii art title to show the beginning
         of the installer.
+
         Output: none
         """
         raise NotImplementedError()
@@ -40,6 +51,7 @@ class PluginInstaller(object):
         """
         A brief description summarizing the steps that the
         installer will take and the metrics the plugin collects.
+
         Output: none
         """
         raise NotImplementedError()
@@ -49,6 +61,7 @@ class PluginInstaller(object):
         If the plugin depends on any library, checks if such
         library is installed.
         Ex: jdk 1.7, libcurl.
+
         Output: none
             raise Exception if there is missing dependency
         """
@@ -57,11 +70,13 @@ class PluginInstaller(object):
     def write_plugin(self, out):
         """
         Write the configuration file for the given plugin
+
         Input:
             out - a write file pointer
         Output:
             A truthy value that indicates a successful write
             ex: 1, True
+
         This method writes the proper configuration setting
         to the file out is pointing.
         """
@@ -72,6 +87,21 @@ class PluginInstaller(object):
         raise ex.MissingDependencyError(msg)
 
     def check_plugin(self):
+        if self.agent == config.TELEGRAF:
+            self.check_telegraf_plugin()
+        elif self.agent == config.COLLECTD:
+            self.check_collectd_plugin()
+        else:
+            pass
+
+    def check_telegraf_plugin(self):
+        if not utils.command_exists('telegraf'):
+            utils.eprint(
+                'Cannot execute telegraf command.\n'
+                'Please add telegraf to your executable path.')
+            raise Exception('Telegraf command is not found.')
+
+    def check_collectd_plugin(self):
         """
         check if the .so file of plugin exists in the following dir
         """
@@ -129,7 +159,7 @@ class PluginInstaller(object):
             cp_cmd = (
                 'cp {infile} {conf_dir}/{outfile}').format(
                     infile=temp_file,
-                    conf_dir=config.COLLECTD_CONF_DIR,
+                    conf_dir=self.conf_dir,
                     outfile=self.conf_name)
             ret = utils.call_command(cp_cmd)
 
@@ -141,7 +171,7 @@ class PluginInstaller(object):
                 utils.cprint(
                     '{0} can be found at {1}.'.format(
                         self.conf_name,
-                        config.COLLECTD_CONF_DIR))
+                        self.conf_dir))
             else:
                 utils.call_command('rm {}'.format(temp_file))
                 raise Exception('Failed to copy the plugin file.\n')

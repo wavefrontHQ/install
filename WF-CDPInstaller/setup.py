@@ -13,5 +13,6 @@ setup(
     package_data={
         'python_installer': ['config/*.json'],
         'plugin_conf': ['*.conf'],
-        'plugin_extension': ['*.py']}
+        'plugin_extension': ['*.py'],
+        'plugin_dir': ['collectd/*.py']}
     )

@@ -2,15 +2,15 @@
 """
 The main module file that will be invoked by the one line installer.
 
-Usage: gather_metrics [operating system(DEBIAN|REDHAT)] log file]
+Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
+(COLLECTD|TELEGRAF)] [log file]
 
 If log file is provided, then errors will be logged to such file.
 Otherwise, all errors will be flushed.
 
 It first checks the dependency this module needs.
 Detects application and calls the appropriate plugin installer.
-Catches ctrl+c to prevent long error message and exit the system
-with return code of 1.
+Catches ctrl+c, which exits the system with return code of 1.
 """
 
 import socket
@@ -33,7 +33,16 @@ NEW = 1
 INSTALLED = 0
 
 
+def usage():
+    utils.cprint(
+        "Usage: gather_metrics [operating system(DEBIAN|REDHAT)] "
+        "[agent(COLLECTD|TELEGRAF)] [log file]")
+
+
 def check_version():
+    """
+    check python version
+    """
     cur_version = sys.version_info
     utils.print_step('  Checking python version')
     if cur_version < REQ_VERSION:
@@ -46,7 +55,7 @@ def check_version():
 
 
 def port_scan(host, port):
-    """
+    """ Deprecated
     Using ipv4, TCP connection to test whether a port is
     being used.
     """
@@ -76,6 +85,9 @@ def check_app(output, app_dict):
     checks if the keyword from support_plugins can be matched
     in ps -ef output.
     if not, check if the command matches
+
+    Note: lax search, but user has potentially more options 
+    to pick installers
     """
     app_search = app_dict['app_search']
     app_cmds = app_dict['command'].split('|')
@@ -107,7 +119,7 @@ def check_app(output, app_dict):
 
 
 def detect_used_ports():
-    """
+    """ Deprecated
     Scan through localhost 0-1024 ports
     """
     MAX_PORT = 1025
@@ -128,10 +140,10 @@ def detect_applications():
     """
     Detect and install appropriate collectd plugin
 
-    Current collectd plugin support:
-    apache, cassandra, mysql, nginx, postgresql
     This function uses unix command ps -ef and check whether
     the supported application is found.
+
+    Check current plugin support in support_plugin.json
     """
 
     plugins_file = config.PLUGINS_FILE_PATH
@@ -153,13 +165,15 @@ def detect_applications():
     finally:
         data_file.close()
 
-    support_dict = collections.OrderedDict(data['data'])
-    support_list = []
+    data = data['data']
+    support_list = data['support'][config.AGENT]
+    plugin_dict = collections.OrderedDict(data['plugins'])
+    support_dict = {}
 
-    for app in support_dict:
-        app_dict = support_dict[app]
+    for app in support_list:
+        app_dict = plugin_dict[app]
         if check_app(res, app_dict):
-            support_list.append(app)
+            support_dict[app] = app_dict
 
     if len(support_list):
         return (support_list, support_dict)
@@ -172,11 +186,14 @@ def installer_menu(app_list, support_dict):
     """
     provide the menu and prompts for the user to interact with the installer
 
+    app_list: list of app detected that has support plugin
+    support_dict: dict that associates with each app in app_list
+
     installer flow:
       1. show selections
       2. installs a plugin
-      3. updates install state (not yet implemented)
-      4. menu changes with install state (not yet implemented)
+      3. updates install state
+      4. menu changes with install state
 
     Option  Name                 State      Date
     (1)     mysql Installer      Installed  (installation date)
@@ -194,10 +211,11 @@ def installer_menu(app_list, support_dict):
     menu_rowf = (
         '{index:{index_pad}} {name:{name_pad}} '
         '{state:{state_pad}} {date}')
+    # padding of each parameter
     index_pad = 7
     name_pad = 30
     state_pad = 12
-    color = utils.BLACK  # default
+    color = utils.BLACK  # default color
 
     res = None  # to begin the prompt loop
     utils.cprint()
@@ -217,11 +235,16 @@ def installer_menu(app_list, support_dict):
                 state='State', state_pad=state_pad,
                 date='Date'))
 
-        install_state = check_install_state(app_list)
+        # install_state_dict contains other agents' state as well
+        install_state_dict = check_install_state(app_list)
+        install_state = install_state_dict[config.AGENT]
+        
         for i, app in enumerate(app_list):
+            # formatted string for menu
             index = '({i})'.format(i=i)
             app_installer = '{} installer'.format(app)
             app_state = install_state[app]['state']
+
             if 'date' in install_state[app]:
                 date = install_state[app]['date']
             else:
@@ -252,48 +275,65 @@ def installer_menu(app_list, support_dict):
             'Which installer would you like to run?').lower()
         if res not in exit_cmd:
             option = check_option(res, len(app_list))
+
             if option is not None:
-                app = support_dict[app_list[option]]
+                app = app_list[option]
+                app_dict = support_dict[app]
                 utils.cprint(
                     'You have selected ({option}) {app} installer'.format(
-                        option=option, app=app_list[option]))
-                app_state = install_state[app_list[option]]['state']
+                        option=option, app=app))
+                app_state = install_state[app]['state']
                 if app_state == INSTALLED:
                     utils.print_warn(
                         'You have previously used this installer\n'
                         'Reinstalling will overwrite the old configuration '
-                        'file, {}.'.format(app['conf_name']))
+                        'file, {}.'.format(app_dict['conf_name']))
                 confirm = utils.ask(
                     'Would you like to proceed with '
                     'the installer?')
                 if confirm:
-                    Installer = getattr(
-                        importlib.import_module(
-                            '{direc}.{mod}'.format(
-                                direc='plugin_dir',
-                                mod=app['module'])),
-                        app['class_name'])
-                    instance = Installer(
-                        config.OPERATING_SYSTEM,
-                        app['plugin_name'],
-                        app['conf_name'])
-                    if instance.install():
-                        install_state[app_list[option]]['state'] = INSTALLED
+                    if run_installer(config.AGENT, app_dict):
+                        install_state[app]['state'] = INSTALLED
                         count += 1
                     else:
-                        install_state[app_list[option]]['state'] = INCOMPLETE
-                    install_state[app_list[option]]['date'] = '{:%c}'.format(
+                        install_state[app]['state'] = INCOMPLETE
+                    install_state[app]['date'] = '{:%c}'.format(
                         datetime.now())
-                    update_install_state(install_state)
+                    update_install_state(config.AGENT, install_state_dict)
             else:
                 utils.print_reminder('Invalid option.')
+
     return count
 
 
+def run_installer(agent, app_dict):
+    if agent == config.COLLECTD:
+        plugin_dir = config.COLLECTD_PLUGIN_DIR
+    elif agent == config.TELEGRAF:
+        plugin_dir = config.TELEGRAF_PLUGIN_DIR
+
+    plugin_dir = plugin_dir.replace('/', '.')
+    Installer = getattr(
+        importlib.import_module(
+            '{direc}.{mod}'.format(
+                direc=plugin_dir,
+                mod=app_dict[agent]['module'])),
+        app_dict[agent]['class_name'])
+    instance = Installer(
+        config.OPERATING_SYSTEM,
+        agent,
+        app_dict[agent]['plugin_name'],
+        app_dict['conf_name'])
+
+    return instance.install()
+ 
+
 def check_install_state(app_list):
     """
+    check the state of each installer
+
     Given: a list of app name
-    return: a list of app_name and their states
+    return: a dict of app_name and their states
 
     Flow:
      - check file path exists
@@ -301,18 +341,24 @@ def check_install_state(app_list):
            check each app against the fiel
            keep track of app and their states
     """
-    file_not_found = False
+    # construct an empty install state if no file found
     empty_state_dict = {}
+    empty_state_dict[config.AGENT] = {}
+    empty_agent_dict = empty_state_dict[config.AGENT]
     for app in app_list:
-        empty_state_dict[app] = {}
-        empty_state_dict[app]['state'] = NEW
+        empty_agent_dict[app] = {}
+        empty_agent_dict[app]['state'] = NEW
 
+    # get location of install_state file
     if config.DEBUG:
         file_path = config.INSTALL_STATE_FILE
     else:
-        file_path = config.INSTALL_STATE_FILE_PATH
-    file_not_found = not utils.check_path_exists(file_path)
+        if config.AGENT == config.COLLECTD:
+            file_path = config.COLLECTD_INSTALL_STATE_FILE_PATH
+        elif config.AGENT == config.TELEGRAF:
+            file_path = config.TELEGRAF_INSTALL_STATE_FILE_PATH
 
+    file_not_found = False
     try:
         install_file = open(file_path)
     except (IOError, OSError) as e:
@@ -327,28 +373,44 @@ def check_install_state(app_list):
         data = json.load(install_file)
     finally:
         install_file.close()
-    data = data['data']
+    install_state = data['data']
+    # create an empty dictionary if key not found
+    if config.AGENT not in install_state:
+        install_state[config.AGENT] = {}
+
+    agent_data = install_state[config.AGENT]
     for app in app_list:
-        if app not in data:
-            data[app] = {}
-            data[app]['state'] = NEW
-    return data
+        if app not in agent_data:
+            agent_data[app] = {}
+            agent_data[app]['state'] = NEW
+
+    return install_state
 
 
-def update_install_state(app_state_dict):
+def update_install_state(agent, app_state_dict):
+    """
+    update the app state by modifying the json file
+    """
     comment = {
           "standard_format": "see below",
-          "APP_NAME": {
-              "state": "(INSTALLED = 0, INCOMPLETE = 1, NEW = 2)",
-              "date": "time_of_installation"
+          "AGENT": {
+              "APP_NAME": {
+                  "state": "(INSTALLED = 0, INCOMPLETE = 1, NEW = 2)",
+                  "date": "time_of_installation"
+              }
           }
       }
     json_content = collections.OrderedDict()
     json_content['_comment'] = comment
     json_content.update({'data': app_state_dict})
 
-    # TODO: needs to find a path to save this file
-    file_path = config.INSTALL_STATE_FILE_PATH
+    if config.DEBUG:
+        file_path = config.INSTALL_STATE_FILE
+    else:
+        if config.AGENT == config.COLLECTD:
+            file_path = config.COLLECTD_INSTALL_STATE_FILE_PATH
+        elif config.AGENT == config.TELEGRAF:
+            file_path = config.TELEGRAF_INSTALL_STATE_FILE_PATH
 
     try:
         outfile = open(file_path, 'w')
@@ -384,13 +446,13 @@ if __name__ == '__main__':
 
     # the first argument will be the log file
     arg_len = len(sys.argv)
-    if arg_len == 3:
+    if arg_len == 4:
         config.OPERATING_SYSTEM = sys.argv[1]
-        config.INSTALL_LOG = sys.argv[2]
-    elif arg_len == 1:
-        config.INSTALL_LOG = '/dev/null'
+        config.AGENT = sys.argv[2]
+        config.INSTALL_LOG = sys.argv[3]
     else:
         utils.eprint('Invalid arguments.')
+        usage()
         sys.exit(1)
 
     if config.DEBUG:
