@@ -1,0 +1,87 @@
+{
+  "_comment": {
+      "standard_format": "see below",
+      "APP_NAME": {
+          "app_search": "search_name",
+          "command": "commands that came with the app",
+          "module": "python_module_name",
+          "plugin_name": "collectd_plugin_name",
+          "class_name": "installer_name",
+          "conf_name": "plugin_conf_filename"
+      }
+  },
+  "data": {
+      "apache":
+      {
+          "app_search": "apache2|httpd",
+          "command": "apache2|httpd",
+          "module": "apache_plugin",
+          "plugin_name": "apache",
+          "class_name": "ApacheInstaller",
+          "conf_name": "wavefront_apache.conf"
+      },
+      "cassandra":
+      {
+          "app_search": "org.apache.cassandra",
+          "command": "cassandra|nodetool",
+          "module": "cassandra_plugin",
+          "plugin_name": "java",
+          "class_name": "CassandraInstaller",
+          "conf_name": "wavefront_cassandra.conf"
+      },
+      "memcached": 
+      {
+          "app_search": "memcached",
+          "command": "memcached",
+          "module": "memcached_plugin",
+          "plugin_name": "memcached",
+          "class_name": "MemcachedInstaller",
+          "conf_name": "wavefront_memcached.conf"
+      },
+      "mysql": 
+      {
+          "app_search": "mysqld",
+          "command": "mysql|mysqld",
+          "module": "mysql_plugin",
+          "plugin_name": "mysql",
+          "class_name": "MySQLInstaller",
+          "conf_name": "wavefront_mysql.conf"
+      },
+      "nginx":
+      {
+          "app_search": "nginx",
+          "command": "nginx",
+          "module": "nginx_plugin",
+          "plugin_name": "nginx",
+          "class_name": "NginxInstaller",
+          "conf_name": "wavefront_nginx.conf"
+      },
+      "postgresql":
+      {
+          "app_search": "postgresql",
+          "command": "psql",
+          "module": "postgresql_plugin",
+          "plugin_name": "postgresql",
+          "class_name": "PostgresqlInstaller",
+          "conf_name": "wavefront_postgres.conf"
+      },
+      "redis":
+      {
+          "app_search": "redis-server",
+          "command": "redis-cli",
+          "module": "redis_plugin",
+          "plugin_name": "python",
+          "class_name": "RedisInstaller",
+          "conf_name": "wavefront_redis.conf"
+      },
+      "zookeeper":
+      {
+          "app_search": "org.apache.zookeeper",
+          "command": "None",
+          "module": "zookeeper_plugin",
+          "plugin_name": "zookeeper",
+          "class_name": "ZookeeperInstaller",
+          "conf_name": "wavefront_zookeeper.conf"
+      }
+  }
+}
