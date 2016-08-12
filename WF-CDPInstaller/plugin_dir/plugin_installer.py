@@ -27,17 +27,44 @@ class PluginInstaller(object):
         elif self.os == config.DEBIAN:
             self.plugin_dir = '/usr/lib/collectd'
 
-    # methods that subclass needs to implement
+    # methods that subclasses need to implement
     def title(self):
+        """
+        A nice stdout ascii art title to show the beginning
+        of the installer.
+        Output: none
+        """
         raise NotImplementedError()
 
     def overview(self):
+        """
+        A brief description summarizing the steps that the
+        installer will take and the metrics the plugin collects.
+        Output: none
+        """
         raise NotImplementedError()
 
     def check_dependency(self):
+        """
+        If the plugin depends on any library, checks if such
+        library is installed.
+        Ex: jdk 1.7, libcurl.
+        Output: none
+            raise Exception if there is missing dependency
+        """
         raise NotImplementedError()
 
     def write_plugin(self, out):
+        """
+        Write the configuration file for the given plugin
+        Input:
+            out - a write file pointer
+        Output:
+            A truthy value that indicates a successful write
+            ex: 1, True
+        This method writes the proper configuration setting
+        to the file out is pointing.
+        """
         raise NotImplementedError()
 
     # helper methods

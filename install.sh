@@ -856,7 +856,7 @@ EOF
 
     if [ -z "$APP_CONFIGURE" ]; then
         echo
-        if ask "Would you like to configure collectd based on your installed app? " Y; then
+        if ask "Would you like to configure collectd plugins for your installed application(s)? " Y; then
             APP_CONFIGURE="yes"
         else
             echo
