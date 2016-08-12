@@ -1,0 +1,5 @@
+include *.md
+include MANIFEST.in
+recursive-include python_installer *.json
+recursive-include plugin_conf *.conf
+recursive-include plugin_extension *.py

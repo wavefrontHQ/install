@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config"
+    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config | --app_configure ]"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -34,6 +34,8 @@ function usage() {
     echo "          The proxy port to send collectd data to."
     echo "    --overwrite_collectd_config"
     echo "          Overwrite existing collectd configurations in /etc/collectd/"
+    echo "    --app_configure"
+    echo "          Launch the interactive collectd plugins installer"
     echo
 }
 
@@ -46,12 +48,17 @@ TOKEN=""
 PROXY=""
 PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
+APP_FINISHED=""
+APP_CONFIGURE=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
 COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
+COLLECTD_PLUGINS=(
+    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
+APP_CONFIGURE_NAME="WF-CDPInstaller-1.0.0dev"
 
 while :
 do
@@ -90,6 +97,11 @@ do
             ;;
         --overwrite_collectd_config)
             OVERWRITE_COLLECTD_CONFIG="yes"
+            APP_CONFIGURE="yes"
+            shift
+            ;;
+        --app_configure)
+            APP_CONFIGURE="yes"
             shift
             ;;
         --log)
@@ -403,6 +415,23 @@ function check_fqdn() {
         echo_success
     fi
 }
+
+# yum_quiet_install() is a helper function that
+# that yum install the array of collectd plugins
+# $1 - arrayname
+function yum_quiet_install() {
+    local _aname=$1[@]
+    local _array=("${!_aname}")
+    for plugin in "${_array[@]}"
+    do
+        echo -e "\nyum -y -q install collectd-$plugin" >>${INSTALL_LOG}
+        yum -y install collectd-$plugin >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to install collectd-$plugin"
+        fi
+    done
+}
+
 
 # main()
 set_install_log
@@ -762,16 +791,9 @@ EOF
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to install collectd"
         fi
-        echo -e "\nyum -y -q install collectd-disk" >>${INSTALL_LOG}
-        yum -y install collectd-disk >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-disk"
-        fi
-        echo -e "\nyum -y -q install collectd-netlink" >>${INSTALL_LOG}
-        yum -y install collectd-netlink >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install collectd-netlink"
-        fi
+
+        # new plugins installation
+        yum_quiet_install COLLECTD_PLUGINS
         echo_success
         ;;
     esac
@@ -781,7 +803,10 @@ EOF
         echo "We recommend using Wavefront's collectd configuration for initial setup"
         if ask "Would you like to overwrite any existing collectd configuration? " N; then
             OVERWRITE_COLLECTD_CONFIG="yes"
+            APP_CONFIGURE="yes"
         else
+            APP_CONFIGURE="no"
+            APP_FINISHED="yes"
             echo
             echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
             echo "Manual setup is required"
@@ -798,7 +823,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Configuring collectd"
-        $FETCHER https://github.com/wavefrontHQ/install/releases/download/1.0/collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
+        $FETCHER https://github.com/kentwang929/install/files/394998/default_collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
         if [ ! -d "/etc/collectd" ]; then
@@ -828,18 +853,77 @@ EOF
         service collectd restart >>${INSTALL_LOG} 2>&1
         echo_success
     fi
+
+    if [ -z "$APP_CONFIGURE" ]; then
+        echo
+        if ask "Would you like to configure collectd plugins for your installed application(s)? " Y; then
+            APP_CONFIGURE="yes"
+        else
+            echo
+            echo "Keeping the default configuration"
+            echo
+            APP_CONFIGURE="no"
+            APP_FINISHED="yes"
+        fi
+    fi
+
+    if [ "$APP_CONFIGURE" == "yes" ]; then
+        if command_exists wget; then
+            FETCHER="wget --quiet -O /tmp/WF-CDPInstaller.tar.gz"
+        elif command_exists curl; then
+            FETCHER="curl -L --silent -o /tmp/WF-CDPInstaller.tar.gz"
+        else
+            exit_with_failure "Either 'wget' or 'curl' are needed"
+        fi
+        echo_step "  Pulling application configuration file"
+        APP_LOCATION="https://github.com/kentwang929/install/files/400050/WF-CDPInstaller.tar.gz"
+        $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Extracting Configuration Files"
+        if [ ! -d "/tmp/WF-CDPInstaller" ]; then
+            mkdir -p /tmp/WF-CDPInstaller
+        fi
+        tar -xf /tmp/WF-CDPInstaller.tar.gz -C /tmp/WF-CDPInstaller >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to extract configuration files"
+        fi
+        echo_success
+        if command_exists python; then
+            cd /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME
+            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            if [ "$?" == 0 ]; then
+                APP_FINISHED="yes"
+            fi
+        else
+            echo_warning "Python is needed to enable the app configure installation"
+        fi
+    fi
+
 fi
 
-echo
-echo "======================================================================================="
-echo "SUCCESS"
+if [ "$APP_FINISHED" == "yes" ]; then
+    echo_step "  Restarting collectd"
+    service collectd restart >>${INSTALL_LOG} 2>&1
+    echo_success
+    echo
+    echo "======================================================================================="
+    echo "SUCCESS"
+fi
+
 
 if [ -n "$INSTALL_PROXY" ]; then
     echo
     echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 
-if [ -n "$INSTALL_COLLECTD" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+if [ -n "$INSTALL_COLLECTD" ] && [ "$APP_FINISHED" == "yes" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo
     echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
+fi
+
+if [ "$APP_CONFIGURE" == "yes" ]; then
+    echo "To restart WF-CDPInstaller"
+    echo "Navigate to /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME and type"
+    echo "python -m python_installer.gather_metrics"
+    echo "Restart the collectd service afterward to see the change"
 fi

@@ -6,7 +6,7 @@ The script can be run in interactive mode, or in automatic mode by passing comma
 
 ## Interactive Mode
 ```
-sudo bash -c "$(curl -sL https://goo.gl/c70QCx)"
+sudo bash -c "$(curl -sL https://raw.githubusercontent.com/kentwang929/install/collectd_package/install.sh)"
 ```
 When running the script above as is, without any further command line arguments, the installer will prompt you for the following:
 
@@ -24,6 +24,8 @@ When running the script above as is, without any further command line arguments,
     The port that the agent should be listening on.
 - **overwrite_collectd_config [y/n]** - 
     Answering yes will configure collectd to send metrics to the wavefront agent.
+- **app_configure [y/n]** -
+    Answering yes will run the mini installer that detects and configure the appropriate collectd configuration files.  Answering no will keep the default configuration file.  This command has to be entered along with overwrite_collectd_config argument.
 
 ## Non-interactive Mode
 
