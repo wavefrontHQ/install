@@ -3,3 +3,4 @@ include MANIFEST.in
 recursive-include python_installer *.json
 recursive-include plugin_conf *.conf
 recursive-include plugin_extension *.py
+recursive-include plugin_dir *.py
