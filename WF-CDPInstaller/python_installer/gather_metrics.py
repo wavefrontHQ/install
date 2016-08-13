@@ -134,10 +134,7 @@ def detect_applications():
     the supported application is found.
     """
 
-    if config.DEBUG:
-        plugins_file = config.PLUGINS_FILE
-    else:
-        plugins_file = '{}/{}'.format(config.APP_DIR, config.PLUGINS_FILE)
+    plugins_file = config.PLUGINS_FILE_PATH
     utils.print_step('Begin app detection')
 
     res = utils.get_command_output('ps -ef')

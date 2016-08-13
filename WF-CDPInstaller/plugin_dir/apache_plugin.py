@@ -38,7 +38,7 @@ class ApacheInstaller(inst.PluginInstaller):
 
         utils.print_step('Checking dependency')
         if not utils.command_exists('curl'):
-            utils.exit_with_failure('Curl is needed for this plugin.')
+            raise Exception('Curl is needed for this plugin.')
 
         # ubuntu check
         # Assumption:
@@ -57,7 +57,7 @@ class ApacheInstaller(inst.PluginInstaller):
                 ret = utils.call_command('sudo a2enmod status')
                 if ret != 0:
                     utils.print_failure()
-                    utils.exit_with_message('a2enmod command was not found')
+                    raise Exception('a2enmod command was not found')
                 utils.print_success()
         elif self.os == config.REDHAT:
             utils.cprint()
@@ -116,10 +116,10 @@ class ApacheInstaller(inst.PluginInstaller):
                         'Failed to restart apache service.')
                 utils.print_success()
             else:
-                exit_with_message(
-                    '{cond_dir} dir does not exist. Manual '
+                raise Exception(
+                    '{conf_dir} dir does not exist. Manual '
                     'set up is required. For help, please '
-                    'consule support@wavefront.com'.format(
+                    'consult support@wavefront.com'.format(
                         conf_dir=conf_dir))
 
     def write_plugin(self, out):
