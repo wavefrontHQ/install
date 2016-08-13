@@ -58,7 +58,7 @@ PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
 COLLECTD_PLUGINS=(
     "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
-APP_CONFIGURE_NAME="WF-CDPInstaller-1.0.0dev"
+APP_CONFIGURE_NAME="WF-PCInstaller-1.1.0dev"
 
 while :
 do
@@ -823,7 +823,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Configuring collectd"
-        $FETCHER https://github.com/kentwang929/install/files/394998/default_collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
+        $FETCHER https://github.com/kentwang929/install/files/421074/default_collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
         if [ ! -d "/etc/collectd" ]; then
@@ -869,28 +869,28 @@ EOF
 
     if [ "$APP_CONFIGURE" == "yes" ]; then
         if command_exists wget; then
-            FETCHER="wget --quiet -O /tmp/WF-CDPInstaller.tar.gz"
+            FETCHER="wget --quiet -O /tmp/${APP_CONFIGURE_NAME}.tar.gz"
         elif command_exists curl; then
-            FETCHER="curl -L --silent -o /tmp/WF-CDPInstaller.tar.gz"
+            FETCHER="curl -L --silent -o /tmp/${APP_CONFIGURE_NAME}.tar.gz"
         else
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/416326/WF-CDPInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/421184/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
-        if [ ! -d "/tmp/WF-CDPInstaller" ]; then
-            mkdir -p /tmp/WF-CDPInstaller
+        if [ ! -d "/tmp/${APP_CONFIGURE_NAME}" ]; then
+            mkdir -p /tmp/${APP_CONFIGURE_NAME}
         fi
-        tar -xf /tmp/WF-CDPInstaller.tar.gz -C /tmp/WF-CDPInstaller >>${INSTALL_LOG} 2>&1
+        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/${APP_CONFIGURE_NAME} >>${INSTALL_LOG} 2>&1
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to extract configuration files"
         fi
         echo_success
         if command_exists python; then
-            cd /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME
-            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            cd /tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME
+            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} COLLECTD ${INSTALL_LOG}
             if [ "$?" == 0 ]; then
                 APP_FINISHED="yes"
             fi
@@ -923,7 +923,7 @@ fi
 
 if [ "$APP_CONFIGURE" == "yes" ]; then
     echo "To restart WF-CDPInstaller"
-    echo "Navigate to /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME and type"
+    echo "Navigate to /tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME and type"
     echo "python -m python_installer.gather_metrics"
     echo "Restart the collectd service afterward to see the change"
 fi

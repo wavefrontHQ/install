@@ -1,6 +1,9 @@
-import install_utils as utils
-import plugin_installer as inst
-import config
+"""
+zookeeper 3.4.8 (Ubuntu 14.04)
+"""
+import common.install_utils as utils
+import plugin_dir.plugin_installer as inst
+import common.config as config
 
 
 class ZookeeperInstaller(inst.PluginInstaller):
@@ -29,52 +32,65 @@ class ZookeeperInstaller(inst.PluginInstaller):
     def check_dependency(self):
         pass
 
-    def write_plugin(self, out):
-        count = 0  # number of server being monitored
+    def collect_data(self):
+        """
 
-        utils.print_step('Begin writing zookeeper plugin for collectd')
-        out.write('LoadPlugin "zookeeper"\n')
-        out.write('<Plugin "zookeeper">\n')
+        note: can only monitor one instance
+        """
+        data = {}
 
-        while count == 0:  # can only monitor one for this plugin
-            host = utils.prompt_and_check_input(
-                prompt=(
-                    'Please enter the hostname that connects to your\n'
-                    'zookeeper server:\n'
-                    '(This plugin can only monitor one server)'),
-                check_func=utils.hostname_resolves,
-                usage='{} does not resolve.'.format,
-                usage_fmt=True,
-                default='127.0.0.1')
+        host = utils.prompt_and_check_input(
+            prompt=(
+                'Please enter the hostname that connects to your\n'
+                'zookeeper server:\n'
+                '(This plugin can only monitor one server)'),
+            check_func=utils.hostname_resolves,
+            usage='{} does not resolve.'.format,
+            usage_fmt=True,
+            default='127.0.0.1')
 
-            port = utils.prompt_and_check_input(
-                prompt=(
-                    'What is the TCP-port used to connect to the host? '),
-                check_func=utils.check_valid_port,
-                usage=(
-                    'A valid port is a number '
-                    'between (0, 65535) inclusive.\n'),
-                default='2181')
+        port = utils.prompt_and_check_input(
+            prompt=(
+                'What is the TCP-port used to connect to the host? '),
+            check_func=utils.check_valid_port,
+            usage=(
+                'A valid port is a number '
+                'between (0, 65535) inclusive.\n'),
+            default='2181')
 
-            plugin_instance = (
-                '    Host "{host}"\n'
-                '    Port "{port}"\n').format(
-                    host=host, port=port)
+        plugin_instance = (
+            '    Host "{host}"\n'
+            '    Port "{port}"\n').format(
+                host=host, port=port)
 
+        utils.cprint()
+        utils.cprint('Result: \n{}'.format(plugin_instance))
+        res = utils.ask('Is the above information correct?')
+
+        if res:
+            utils.print_step('Saving instance')
+            data = {
+                'host': host,
+                'port': port
+            }
+            utils.print_success()
+        else:
+            utils.cprint('This instance is not saved.')
             utils.cprint()
-            utils.cprint('Result: \n{}'.format(plugin_instance))
-            res = utils.ask('Is the above information correct?')
 
-            if res:
-                utils.print_step('Saving instance')
-                count = count + 1
-                out.write(plugin_instance)
-                utils.print_success()
-            else:
-                utils.cprint('This instance is not saved.')
-                utils.cprint()
-        out.write('</Plugin>\n')
-        return count
+        return data
+
+    def output_config(self, data, out):
+        utils.print_step('Begin writing zookeeper plugin for collectd')
+        out.write(
+            'LoadPlugin "zookeeper"\n'
+            '<Plugin "zookeeper">\n'
+            '    Host "{host}"\n'
+            '    Port "{port}"\n'
+            '</Plugin>'.format(
+                host=data['host'],
+                port=data['port']))
+        return True
 
 if __name__ == '__main__':
     zk = ZookeeperInstaller(

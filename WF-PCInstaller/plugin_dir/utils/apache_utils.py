@@ -1,8 +1,8 @@
 import re
-import urlparse as url_p
 
 import common.install_utils as utils
 import common.config as config
+import plugin_dir.utils.plugin_utils as p_utils
 
 
 def title():
@@ -93,10 +93,10 @@ def check_dependency(os):
     if res:
         # dir changes depending on the system
         # tested on Ubuntu 14.04, RHEL 7.2
-        if self.os == config.DEBIAN:
+        if os == config.DEBIAN:
             conf_dir = '/etc/apache2/conf-enabled'
             app_name = 'apache2'
-        elif self.os == config.REDHAT:
+        elif os == config.REDHAT:
             conf_dir = '/etc/httpd/conf.modules.d'
             app_name = 'httpd'
 
@@ -126,72 +126,41 @@ def check_dependency(os):
                     conf_dir=conf_dir))
 
 
-def check_server(url, server_list):
+def check_server_url(url, url_list=[]):
     """
     check if the url provided is a valid server-status page
 
     Input:
         url string: the url provided by the user
-        server_list []string: list of url user has monitored already
+        url_list []string: list of url user has monitored already
     Output:
-        None: if user does not provide a valid url
-        res_url string: the input url
+        True if the user provides a valid url
+        False otherwise
     """
-    server_list = []
-    res_url = None
+    ret_val = False
 
-    if url is None:
-        return None
+    if not p_utils.check_url(url, url_list):
+        return False
 
-    if url in server_list:
-        utils.eprint(
-            'You have already added this {}'.format(url))
-        return None
-
-    parsed = url_p.urlparse(url)
-    if not parsed.scheme:
-        utils.print_color_msg(
-            '\nPlease provide the url scheme as well.',
-            utils.YELLOW)
-        return None
-
-    utils.print_step('Checking http response for %s' % url)
-    res = utils.get_command_output('curl -s -i '+url)
-
-    if res is None:
-        ret = utils.INVALID_URL
+    res = utils.get_command_output('curl -s {url}'.format(url=url))
+    status = check_apache_server_status(res)
+    if status is None:
+        utils.print_warn(
+            'The url you have provided '
+            'does not seem to be the correct server_status '
+            'page.  Incorrect server-status will not be '
+            'recorded.')
+        utils.cprint()
+        record = utils.ask(
+            'Would you like to record this url anyway?', 'no')
+        if record:
+            ret_val = True
     else:
-        ret = utils.check_http_response(res)
+        utils.cprint(
+            'Monitoring {}'.format(status))
+        ret_val = True
 
-    if ret == utils.NOT_AUTH:
-        # skip for this case for now, ask for user/pass
-        utils.eprint(
-            'Authorization is required, please '
-            'try again.\n')
-    elif ret == utils.NOT_FOUND or ret == utils.INVALID_URL:
-        utils.print_failure()
-        utils.eprint(
-            'Invalid url was provided, please try '
-            'again.\n')
-    elif ret == utils.HTTP_OK:
-        utils.print_success()
-        status = check_apache_server_status(res)
-        if status is None:
-            utils.print_warn(
-                'The url you have provided '
-                'does not seem to be the correct server_status '
-                'page.  Incorrect server-status will not be '
-                'recorded by collectd.')
-            record = utils.ask(
-                'Would you like to record this url anyway?', 'no')
-            if record:
-                res_url = url
-        else:
-            utils.cprint(
-                'Monitoring {}'.format(status))
-            res_url = url
-
-    return res_url
+    return ret_val
 
 
 def check_apache_server_status(payload):
@@ -247,5 +216,5 @@ def apache_plugin_usage():
       '\tapache.org/server-status\n')
 
 if __name__ == '__main__':
-    utils.cprint(get_server_list())
+    # utils.cprint(get_server_list())
     check_dependency("DEBIAN")

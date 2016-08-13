@@ -14,7 +14,6 @@ plugin_dir/plugin_exception.py
 plugin_dir/plugin_installer.py
 plugin_dir/collectd/__init__.py
 plugin_dir/collectd/apache_plugin.py
-plugin_dir/collectd/apache_plugin2.py
 plugin_dir/collectd/cassandra_plugin.py
 plugin_dir/collectd/memcached_plugin.py
 plugin_dir/collectd/mysql_plugin.py
@@ -24,9 +23,12 @@ plugin_dir/collectd/redis_plugin.py
 plugin_dir/collectd/zookeeper_plugin.py
 plugin_dir/telegraf/__init__.py
 plugin_dir/telegraf/apache_configurator.py
+plugin_dir/telegraf/nginx_configurator.py
 plugin_dir/telegraf/telegraf_utils.py
 plugin_dir/utils/__init__.py
 plugin_dir/utils/apache_utils.py
+plugin_dir/utils/nginx_utils.py
+plugin_dir/utils/plugin_utils.py
 plugin_extension/__init__.py
 plugin_extension/redis_info.py
 python_installer/__init__.py

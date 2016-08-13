@@ -21,7 +21,7 @@
   "data": {
       "support": {
           "TELEGRAF": [
-              "apache"
+              "apache", "nginx"
           ],
           "COLLECTD": [
               "apache", "cassandra", "memcached", "mysql", "nginx",
@@ -87,7 +87,12 @@
                   "module": "nginx_plugin",
                   "plugin_name": "nginx",
                   "class_name": "NginxInstaller"
-              }
+              },
+              "TELEGRAF": {
+                  "module": "nginx_configurator",
+                  "plugin_name": "nginx",
+                  "class_name": "NginxConfigurator"
+	      }
           },
           "postgresql":
           {

@@ -399,7 +399,7 @@ def update_install_state(agent, app_state_dict):
                   "date": "time_of_installation"
               }
           }
-      }
+    }
     json_content = collections.OrderedDict()
     json_content['_comment'] = comment
     json_content.update({'data': app_state_dict})

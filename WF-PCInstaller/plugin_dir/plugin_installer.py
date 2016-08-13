@@ -8,14 +8,14 @@ class PluginInstaller(object):
     The interface for installers
 
     The following methods need to be implemented
-      title():
-          - the ascii art for the installer
-      overview():
-          - general description about what the installer does
-      check_depedency()
-          - check plugin and installer's dependency
-      write_plugin():
-          - write the actual plugin file
+        title():
+            - the ascii art for the installer
+        overview():
+            - general description about what the installer does
+        check_depedency()
+            - check plugin and installer's dependency
+        write_plugin():
+            - write the actual plugin file
     """
     def __init__(self, os, agent, plugin_name, conf_name):
         self.os = os
@@ -45,7 +45,7 @@ class PluginInstaller(object):
 
         Output: none
         """
-        raise NotImplementedError()
+        raise NotImplementedError('title method not implemented')
 
     def overview(self):
         """
@@ -54,7 +54,7 @@ class PluginInstaller(object):
 
         Output: none
         """
-        raise NotImplementedError()
+        raise NotImplementedError('overview method not implemented')
 
     def check_dependency(self):
         """
@@ -63,24 +63,41 @@ class PluginInstaller(object):
         Ex: jdk 1.7, libcurl.
 
         Output: none
+        Side-effect:
             raise Exception if there is missing dependency
         """
-        raise NotImplementedError()
+        raise NotImplementedError('check_dependency method not implemented')
 
-    def write_plugin(self, out):
+    def collect_data(self):
+        """
+        collect input from user and store it into a dictionary
+
+        Output:
+            data dict:
+                a dictionary of data gathered from user
+                to enable the plugin
+        """
+        raise NotImplementedError('collect_data method not implemented')
+
+    def output_config(self, data, out):
         """
         Write the configuration file for the given plugin
 
         Input:
-            out - a write file pointer
+            data dict:
+                a dictionary of data gathered from user
+                to enable the plugin
+            out:
+                a write file pointer
         Output:
             A truthy value that indicates a successful write
             ex: 1, True
 
-        This method writes the proper configuration setting
-        to the file out is pointing.
+        Description: 
+            This method writes the proper configuration setting
+            to the file out is pointing.
         """
-        raise NotImplementedError()
+        raise NotImplementedError('output_config method not implemented')
 
     # helper methods
     def raise_error(self, msg):
@@ -117,8 +134,8 @@ class PluginInstaller(object):
 
         plugin_mod = self.plugin_name + '.so'
         if utils.check_path_exists(
-          '{}/{}'.format(self.plugin_dir, plugin_mod)):
-            utils.print_success()
+            '{}/{}'.format(self.plugin_dir, plugin_mod)):
+                utils.print_success()
         else:
             self.raise_error('Missing {} plugin for collectd'.format(
                 self.plugin_name))
@@ -137,7 +154,8 @@ class PluginInstaller(object):
         try:
             with open(temp_file, 'w') as out:
                 try:
-                    res = self.write_plugin(out)
+                    data = self.collect_data()
+                    res = self.output_config(data, out)
                 except KeyboardInterrupt as e:
                     error = e
                 except Exception as e:
@@ -165,9 +183,6 @@ class PluginInstaller(object):
 
             if ret == 0:
                 utils.print_success()
-                utils.cprint(
-                    '{} plugin has been written successfully.'.format(
-                      self.plugin_name))
                 utils.cprint(
                     '{0} can be found at {1}.'.format(
                         self.conf_name,

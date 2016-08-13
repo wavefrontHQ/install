@@ -7,6 +7,7 @@ import random
 import socket
 import string
 import re
+import urlparse as url_p
 
 # colors for the print
 BLACK = 0
@@ -25,6 +26,14 @@ INVALID_URL = -1
 
 
 # input/output utils
+def cprint(*args, **kwargs):
+    print(*args, **kwargs)
+
+
+def eprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
 def cinput(*args, **kwargs):
     """
     to make input compatible for python2 and 3
@@ -268,7 +277,14 @@ def get_http_status(url):
     return get_command_output(status_cmd)
 
 
-def check_http_response(http_res):
+def get_http_return_code(http_res):
+    """
+    Input:
+        http_res string:
+            http response header
+    Output:
+        the appropriate code
+    """
     http_status_re = re.match('HTTP/1.1 (\d* [\w ]*)\s', http_res)
     if http_status_re is None:
         return INVALID_URL
@@ -285,12 +301,37 @@ def check_http_response(http_res):
         return INVALID_URL
 
 
-def cprint(*args, **kwargs):
-    print(*args, **kwargs)
+def check_repeat(item, item_list):
+    """
+    Input:
+        item AnyType
+        item_list []AnyType
+    Output:
+        True if item is in list
+        False otherwise
+    Side-effect:
+        Output error message.
+    """
+    if item in item_list:
+        utils.eprint(
+            'You have already added this {}'.format(item))
+        return True
+    return False
+       
 
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+def check_url_scheme(url):
+    """
+    Input:
+        url string:
+            a url string
+    Output:
+        True if the url contains scheme
+        False otherwise
+    """
+    parsed = url_p.urlparse(url)
+    if not parsed.scheme:
+        return False
+    return True
 
 
 def random_string(length):

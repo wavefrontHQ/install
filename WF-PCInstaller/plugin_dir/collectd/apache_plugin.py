@@ -1,3 +1,7 @@
+"""
+Tested with Apache/2.4.7 (Ubuntu 14.04)
+"""
+
 import common.install_utils as utils
 import common.config as config
 import plugin_dir.plugin_installer as inst
@@ -15,18 +19,19 @@ class ApacheInstaller(inst.PluginInstaller):
     def check_dependency(self):
         a_util.check_dependency(self.os)
 
-    def write_plugin(self, out):
-        count = 0
+    def collect_data(self):
+        """
+        data = {
+            "instance_name": "url",
+        }
+        """
+        data = {}
         server_list = []
         iname_list = []
 
-        utils.print_step('Begin writing apache plugin for collectd')
-        out.write(
-            'LoadPlugin "apache"\n'
-            '<Plugin "apache">\n')
         a_util.apache_plugin_usage()
-
         while utils.ask('Would you like to add a server to monitor?'):
+            # Ask for a instance name that isn't already recorded
             iname = utils.prompt_and_check_input(
                 prompt=(
                     '\nHow would you like to name this monitoring instance?\n'
@@ -38,10 +43,11 @@ class ApacheInstaller(inst.PluginInstaller):
                     '{} has already been used.'.format),
                 usage_fmt=True).replace(" ", "")
 
+            # ask for a valid server status url
             url = None
-            while not a_util.check_server(url, server_list):
+            while not a_util.check_server_url(url, server_list):
                 url = utils.get_input(
-                    'Please enter the url that contains your '
+                    '\nPlease enter the url that contains your '
                     'server-status\n'
                     '(ex: http://www.apache.org/server-status):')
 
@@ -60,15 +66,34 @@ class ApacheInstaller(inst.PluginInstaller):
                 'Is this the correct status to monitor?')
             if res:
                 utils.print_step('Saving instance')
-                count = count + 1
+                # store input
                 server_list.append(url)
                 iname_list.append(iname)
-                out.write(plugin_instance)
+                data[iname] = url_auto
                 utils.print_success()
             else:
                 utils.cprint('Instance is not saved.')
+
+        return data
+ 
+    def output_config(self, data, out):
+        utils.print_step('Begin writing apache plugin for collectd')
+        if not data:
+            return False
+
+        out.write(
+            'LoadPlugin "apache"\n'
+            '<Plugin "apache">\n')
+
+        for instance in data:
+            out.write(
+                '  <Instance "{instance}">\n'
+                '    URL "{url}"\n'
+                '  </Instance>\n'.format(instance=instance,
+                                          url=data[instance]))
+
         out.write('</Plugin>\n')
-        return count
+        return True
 
 if __name__ == '__main__':
     apache = ApacheInstaller('DEBIAN', 'apache', 'wavefront_apache.conf')

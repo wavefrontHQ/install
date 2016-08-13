@@ -1,3 +1,6 @@
+"""
+postgresql 9.3 (Ubuntu 14.04)
+"""
 import common.install_utils as utils
 import plugin_dir.plugin_installer as inst
 import common.config as config
@@ -56,59 +59,21 @@ class PostgresqlInstaller(inst.PluginInstaller):
         utils.cprint()
         _ = utils.cinput('Press Enter to continue')
 
-    def write_plugin(self, out):
+    def collect_data(self):
         """
-        unique query name
-          - query_list = []
-        Result block define how each value should be handled
-          - requires Type to be specified
-          - instanceprefix should be unique
+        data = {
+            instance_name: {
+                db: value,
+                host: value,
+                port: value,
+                user: value,
+                password: value,
+            }
+        }
         """
-        comment = (
-            '# Documentation:\n'
-            '#   https://collectd.org/wiki/index.php/'
-            'Plugin:PostgreSQL\n')
-
-        sample_query_block = (
-            '  <Query custom_deadlocks>\n'
-            '      Statement "SELECT deadlocks as num_deadlocks \\\n'
-            '          FROM pg_stat_database \\\n'
-            '          WHERE datname = $1;"\n\n'
-            '      Param database\n\n'
-            '      <Result>\n'
-            '          Type "pg_xact"\n'
-            '          InstancePrefix "num_deadlocks"\n'
-            '          ValuesFrom "num_deadlocks"\n'
-            '      </Result>\n'
-            '  </Query>\n')
-
-        default_query = (
-            '    Query custom_deadlocks\n'
-            '    Query backends\n'
-            '    Query transactions\n'
-            '    Query queries\n'
-            '    Query queries_by_table\n'
-            '    Query query_plans\n'
-            '    Query table_states\n'
-            '    Query query_plans_by_table\n'
-            '    Query table_states_by_tables\n'
-            '    Query disk_io\n'
-            '    Query disk_io_by_table\n'
-            '    Query disk_usage\n')
-
-        count = 0  # track how many db is monitored
+        data = {}
         name_list = []  # keep a list of db name to check for uniqueness
         db_list = []
-
-        utils.cprint()
-        utils.print_step('Begin writing PostgresSQL plugin for collectd')
-        out.write(
-            '{comment}\n'
-            'LoadPlugin "postgresql"\n'
-            '<Plugin "postgresql">\n'
-            '{sample_query}\n'.format(
-                comment=comment,
-                sample_query=sample_query_block))
 
         while utils.ask('Would you like to add a database to monitor?'):
             db = utils.get_input(
@@ -179,19 +144,95 @@ class PostgresqlInstaller(inst.PluginInstaller):
                 utils.print_step('Saving instance')
                 name_list.append(iname)
                 db_list.append((db, host, port))
-                count += 1
-                out.write(
-                    '  <Database {db}>\n'
-                    '{instance}'
-                    '{query}'
-                    '  </Database>\n\n'.format(
-                        db=db, instance=instance, query=default_query))
+                data[iname] = {
+                    "db": db,
+                    "host": host,
+                    "port": port,
+                    "username": username,
+                    "password": password
+                }
+
                 utils.print_success()
             else:
                 utils.cprint('This instance will not be saved.')
 
+        return data
+
+    def output_config(self, data, out):
+        """
+        unique query name
+          - query_list = []
+        Result block define how each value should be handled
+          - requires Type to be specified
+          - instanceprefix should be unique
+        """
+        if not data:
+            return False
+
+        comment = (
+            '# Documentation:\n'
+            '#   https://collectd.org/wiki/index.php/'
+            'Plugin:PostgreSQL\n')
+
+        sample_query_block = (
+            '  <Query custom_deadlocks>\n'
+            '      Statement "SELECT deadlocks as num_deadlocks \\\n'
+            '          FROM pg_stat_database \\\n'
+            '          WHERE datname = $1;"\n\n'
+            '      Param database\n\n'
+            '      <Result>\n'
+            '          Type "pg_xact"\n'
+            '          InstancePrefix "num_deadlocks"\n'
+            '          ValuesFrom "num_deadlocks"\n'
+            '      </Result>\n'
+            '  </Query>\n')
+
+        default_query = (
+            '    Query custom_deadlocks\n'
+            '    Query backends\n'
+            '    Query transactions\n'
+            '    Query queries\n'
+            '    Query queries_by_table\n'
+            '    Query query_plans\n'
+            '    Query table_states\n'
+            '    Query query_plans_by_table\n'
+            '    Query table_states_by_tables\n'
+            '    Query disk_io\n'
+            '    Query disk_io_by_table\n'
+            '    Query disk_usage\n')
+
+        utils.cprint()
+        utils.print_step('Begin writing PostgresSQL plugin for collectd')
+
+        out.write(
+            '{comment}\n'
+            'LoadPlugin "postgresql"\n'
+            '<Plugin "postgresql">\n'
+            '{sample_query}\n'.format(
+                comment=comment,
+                sample_query=sample_query_block))
+
+        for instance in data:
+            info = data[instance]
+            out.write(
+                '  <Database {db}>\n'
+                '    Host "{host}"\n'
+                '    Port "{port}"\n'
+                '    User "{username}"\n'
+                '    Password "{password}"\n'
+                '    Instance "{iname}"\n'
+                '{query}'
+                '  </Database>\n\n'.format(
+                    db=info['db'],
+                    host=info['host'],
+                    port=info['port'],
+                    username=info['username'],
+                    password=info['password'],
+                    iname=instance,
+                    query=default_query))
+
         out.write('</Plugin>\n')
-        return count
+        return True
 
 if __name__ == '__main__':
     postgres = PostgresqlInstaller(

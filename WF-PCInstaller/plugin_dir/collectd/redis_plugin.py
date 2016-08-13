@@ -1,3 +1,6 @@
+"""
+redis-server 2.8.4 (Ubuntu 14.04)
+"""
 import common.install_utils as utils
 import plugin_dir.plugin_installer as inst
 import common.config as config
@@ -36,23 +39,10 @@ class RedisInstaller(inst.PluginInstaller):
     def check_dependency(self):
         """
         requires Python >= 2.3, which is already checked.
-        """
-        pass
 
-    def write_plugin(self, out):
-        """
-        Flow:
         create /opt/collectd/plugins/python directory
-        mv the redis_info.py into there
-        ask for instance name
-        then ask for hostname, port
-        ask for auth
+        cp the redis_info.py into there
         """
-        count = 0  # number of server being monitored
-        iname_list = []
-        server_list = []
-        first_prompt = True
-        python_plugin_path = '/opt/collectd/plugins/python'
         if config.DEBUG:
             plugin_src = '{}/{}'.format(
                 config.PLUGIN_EXTENSION_DIR, 'redis_info.py')
@@ -61,6 +51,129 @@ class RedisInstaller(inst.PluginInstaller):
                 config.APP_DIR,
                 config.PLUGIN_EXTENSION_DIR,
                 'redis_info.py')
+
+        utils.print_step(
+            'Begin configuring Redis python plugin for collectd')
+
+        # create directory if it doesn't exist
+        if not utils.check_path_exists(config.COLLECTD_PYTHON_PLUGIN_PATH):
+            utils.print_step(
+                '  Creating directory {} '
+                'for collectd python plugin'.format(config.COLLECTD_PYTHON_PLUGIN_PATH))
+            res = utils.call_command(
+                'mkdir -p {}'.format(config.COLLECTD_PYTHON_PLUGIN_PATH))
+            if res == 0:
+                utils.print_success()
+            else:
+                utils.print_failure()
+                raise Exception(
+                    'Unable to create directory {}.'.format(
+                        config.COLLECTD_PYTHON_PLUGIN_PATH))
+
+        utils.print_step(
+            '  Moving python plugin')
+        res = utils.call_command(
+            'cp {src} {dst}'.format(
+                src=plugin_src, dst=config.COLLECTD_PYTHON_PLUGIN_PATH))
+        if res == 0:
+            utils.print_success()
+        else:
+            utils.print_failure()
+            raise Exception('Failed to move the plugin.')
+
+    def collect_data(self):
+        data = {}
+        iname_list = []
+        server_list = []
+
+        while utils.ask('Would you like to add a server to monitor?'):
+            iname = utils.prompt_and_check_input(
+                prompt=(
+                    '\nHow would you like to name this monitoring instance?\n'
+                    '(How it should appear on your wavefront metric page, \n'
+                    'space between words will be removed)'),
+                check_func=(
+                    lambda x: x.replace(" ", "") not in iname_list),
+                usage=(
+                    '{} has already been used.'.format),
+                usage_fmt=True).replace(" ", "")
+
+            host = utils.prompt_and_check_input(
+                prompt=(
+                    '\nPlease enter the hostname that connects to your\n'
+                    'redis server: (ex: localhost)'),
+                check_func=utils.hostname_resolves,
+                usage='{} does not resolve.'.format,
+                usage_fmt=True)
+
+            port = utils.prompt_and_check_input(
+                prompt=(
+                    '\nWhat is the TCP-port used to connect to the host? '),
+                check_func=utils.check_valid_port,
+                usage=(
+                    'A valid port is a number '
+                    'between (0, 65535) inclusive.'),
+                default='6379')
+
+            if (host, port) in server_list:
+                utils.eprint(
+                    'You have already monitored {host}:{port}.'.format(
+                        host=host, port=port))
+                continue
+
+            plugin_instance = (
+                '    Instance "{iname}"\n'
+                '    Host "{host}"\n'
+                '    Port "{port}"\n').format(
+                    iname=iname,
+                    host=host, port=port)
+
+            protected = utils.ask(
+                    'Is there an authorization password set up for\n'
+                    '{host}:{port}'.format(host=host, port=port),
+                    default=None)
+            if protected:
+                auth = utils.get_input(
+                    'What is the authorization password?')
+                plugin_instance += (
+                    '    Auth "{auth}"\n'.format(auth=auth))
+
+            slave = utils.ask(
+                'Is this a slave server?', default='no')
+
+            utils.cprint()
+            if slave:
+                utils.cprint('(slave server)')
+            utils.cprint('Result: \n{}'.format(plugin_instance))
+            res = utils.ask('Is the above information correct?')
+
+            if res:
+                utils.print_step('Saving instance')
+                iname_list.append(iname)
+                server_list.append((host, port))
+                data[iname] = {
+                    'host': host,
+                    'port': port,
+                }
+                if protected:
+                    data[iname]['auth'] = auth
+                if slave:
+                    data[iname]['slave'] = True
+                utils.print_success()
+            else:
+                utils.cprint('This instance is not saved.')
+
+        return data
+
+    def output_config(self, data, out):
+        """
+        Flow:
+        ask for instance name
+        then ask for hostname, port
+        ask for auth
+        """
+        if not data:
+            return False
 
         metrics = (
             '    Verbose false\n'
@@ -104,129 +217,48 @@ class RedisInstaller(inst.PluginInstaller):
             '    Redis_master_last_io_seconds_ago "gauge"\n'
             '    Redis_slave_repl_offset "gauge"\n')
 
-        utils.print_step(
-            'Begin configuring Redis python plugin for collectd')
-
-        # create directory if it doesn't exist
-        if not utils.check_path_exists(python_plugin_path):
-            utils.print_step(
-                '  Creating directory {} '
-                'for collectd python plugin'.format(python_plugin_path))
-            res = utils.call_command(
-                'mkdir -p {}'.format(python_plugin_path))
-            if res == 0:
-                utils.print_success()
-            else:
-                utils.print_failure()
-                raise Exception('Unable to create directory.')
-
-        utils.print_step(
-            '  Moving python plugin')
-        res = utils.call_command(
-            'cp {src} {dst}'.format(
-                src=plugin_src, dst=python_plugin_path))
-        if res == 0:
-            utils.print_success()
-        else:
-            utils.print_failure()
-            raise Exception('Failed to move the plugin.')
-
         utils.print_step('Begin writing redis configuration for collectd')
         # pull comment and append to it
         if not self.pull_comment(out):
             utils.print_warn('Failed to pull comment.')
 
-        out.write('\n\n')
         out.write(
+            '\n\n'
             '<LoadPlugin python>\n'
             '  Globals true\n'
             '</LoadPlugin>\n\n'
             '<Plugin python>\n'
             '  ModulePath "{path}"\n'
-            '  Import "redis_info"\n'.format(path=python_plugin_path))
+            '  Import "redis_info"\n'.format(
+                path=config.COLLECTD_PYTHON_PLUGIN_PATH))
 
-        while utils.ask('Would you like to add a server to monitor?'):
-            iname = utils.prompt_and_check_input(
-                prompt=(
-                    '\nHow would you like to name this monitoring instance?\n'
-                    '(How it should appear on your wavefront metric page, \n'
-                    'space between words will be removed)'),
-                check_func=(
-                    lambda x: x.replace(" ", "") not in iname_list),
-                usage=(
-                    '{} has already been used.'.format),
-                usage_fmt=True).replace(" ", "")
-
-            host = utils.prompt_and_check_input(
-                prompt=(
-                    'Please enter the hostname that connects to your\n'
-                    'redis server: (ex: localhost)'),
-                check_func=utils.hostname_resolves,
-                usage='{} does not resolve.'.format,
-                usage_fmt=True)
-
-            port = utils.prompt_and_check_input(
-                prompt=(
-                    'What is the TCP-port used to connect to the host? '),
-                check_func=utils.check_valid_port,
-                usage=(
-                    'A valid port is a number '
-                    'between (0, 65535) inclusive.\n'),
-                default='6379')
-
-            if (host, port) in server_list:
-                utils.eprint(
-                    'You have already monitored {host}:{port}.'.format(
-                        host=host, port=port))
-                continue
-
+        for instance in data:
             plugin_instance = (
                 '    Instance "{iname}"\n'
                 '    Host "{host}"\n'
                 '    Port "{port}"\n').format(
-                    iname=iname,
-                    host=host, port=port)
-
-            if utils.ask(
-                    'Is there an authorization password set up for\n'
-                    '{host}:{port}'.format(host=host, port=port),
-                    default=None):
-                auth = utils.get_input(
-                    'What is the authorization password?')
+                    iname=instance,
+                    host=data[instance]['host'],
+                    port=data[instance]['port'])
+            if 'auth' in data[instance]:
                 plugin_instance += (
-                    '    Auth "{auth}"\n'.format(auth=auth))
+                    '    Auth "{auth}"\n'.format(
+                        auth=data[instance]['auth']))
 
-            slave = utils.ask(
-                'Is this a slave server?', default='no')
+            out.write(
+                '\n  <Module redis_info>\n'
+                '{plugin_instance}'
+                '{metrics}'.format(
+                    plugin_instance=plugin_instance,
+                    metrics=metrics))
+            if 'slave' in data[instance]:
+                out.write(slave_metrics)
+            out.write('  </Module>\n')
 
-            utils.cprint()
-            if slave:
-                utils.cprint('(slave server)')
-            utils.cprint('Result: \n{}'.format(plugin_instance))
-            res = utils.ask('Is the above information correct?')
-
-            if res:
-                utils.print_step('Saving instance')
-                count = count + 1
-                iname_list.append(iname)
-                server_list.append((host, port))
-                out.write(
-                    '\n  <Module redis_info>\n'
-                    '{plugin_instance}'
-                    '{metrics}'.format(
-                        plugin_instance=plugin_instance,
-                        metrics=metrics))
-                if slave:
-                    out.write(slave_metrics)
-                out.write('  </Module>\n')
-                utils.print_success()
-            else:
-                utils.cprint('This instance is not saved.')
         out.write('</Plugin>\n')
-        return count
+        return True
 
     def pull_comment(self, out):
-        res = True
         if config.DEBUG:
             filepath = '{conf_dir}/{conf_name}'.format(
                 conf_dir=config.PLUGIN_CONF_DIR,
@@ -243,9 +275,9 @@ class RedisInstaller(inst.PluginInstaller):
                     out.write(line)
         except (IOError, OSError) as e:
             utils.eprint('Cannot open file at {}'.format(filepath))
-            res = False
+            return False
 
-        return res
+        return True
 
 if __name__ == '__main__':
     redis = RedisInstaller(

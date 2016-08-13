@@ -1,3 +1,7 @@
+"""
+memcached 1.4.14 (Ubuntu 14.04)
+"""
+
 import re
 
 import common.install_utils as utils
@@ -31,16 +35,20 @@ class MemcachedInstaller(inst.PluginInstaller):
     def check_dependency(self):
         pass
 
-    def write_plugin(self, out):
-        count = 0  # number of server being monitored
+    def collect_data(self):
+        """
+        data = {
+            instance_name: {
+                host: value
+                port: value
+            }
+        }
+        """
+        data = {}
         iname_list = []
         server_list = []
 
-        utils.print_step('Begin writing memcached plugin for collectd')
-        out.write('LoadPlugin "memcached"\n')
-        out.write('<Plugin "memcached">\n')
-
-        while utils.ask('Would you like to add a server to monitor?'):
+        while utils.ask('\nWould you like to add a server to monitor?'):
             iname = utils.prompt_and_check_input(
                 prompt=(
                     '\nHow would you like to name this monitoring instance?\n'
@@ -54,7 +62,7 @@ class MemcachedInstaller(inst.PluginInstaller):
 
             host = utils.prompt_and_check_input(
                 prompt=(
-                    'Please enter the hostname that connects to your\n'
+                    '\nPlease enter the hostname that connects to your\n'
                     'memcached server:'),
                 check_func=utils.hostname_resolves,
                 usage='{} does not resolve.'.format,
@@ -63,7 +71,7 @@ class MemcachedInstaller(inst.PluginInstaller):
 
             port = utils.prompt_and_check_input(
                 prompt=(
-                    'What is the TCP-port used to connect to the host? '),
+                    '\nWhat is the TCP-port used to connect to the host? '),
                 check_func=utils.check_valid_port,
                 usage=(
                     'A valid port is a number '
@@ -90,15 +98,38 @@ class MemcachedInstaller(inst.PluginInstaller):
 
             if res:
                 utils.print_step('Saving instance')
-                count = count + 1
                 iname_list.append(iname)
                 server_list.append((host, port))
-                out.write(plugin_instance)
+                data[iname] = {
+                    "host": host,
+                    "port": port
+                }
                 utils.print_success()
             else:
                 utils.cprint('This instance is not saved.')
+
+        return data
+
+    def output_config(self, data, out):
+        utils.print_step('Begin writing memcached plugin for collectd')
+        if not data:
+            return False
+
+        out.write('LoadPlugin "memcached"\n')
+        out.write('<Plugin "memcached">\n')
+
+        for instance in data:
+            out.write(
+                '  <Instance "{iname}">\n'
+                '    Host "{host}"\n'
+                '    Port "{port}"\n'
+                '  </Instance>\n'.format(
+                    iname=instance,
+                    host=data[instance]['host'],
+                    port=data[instance]['port']))
+
         out.write('</Plugin>\n')
-        return count
+        return True
 
 if __name__ == '__main__':
     mc = MemcachedInstaller(
