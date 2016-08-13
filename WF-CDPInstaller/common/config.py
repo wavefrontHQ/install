@@ -16,3 +16,4 @@ INSTALL_STATE_FILE_PATH = '{}/{}'.format(
     COLLECTD_CONF_DIR, INSTALL_STATE_FILE)
 # others
 PLUGINS_FILE = 'support_plugins.json'
+PLUGINS_FILE_PATH = 'python_installer/config/' + PLUGINS_FILE
