@@ -3,7 +3,7 @@
 The main module file that will be invoked by the one line installer.
 
 Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
-(COLLECTD|TELEGRAF)] [log file]
+(COLLECTD|TELEGRAF)] [APP_DIR] [log file]
 
 If log file is provided, then errors will be logged to such file.
 Otherwise, all errors will be flushed.
@@ -36,7 +36,7 @@ INSTALLED = 0
 def usage():
     utils.cprint(
         "Usage: gather_metrics [operating system(DEBIAN|REDHAT)] "
-        "[agent(COLLECTD|TELEGRAF)] [log file]")
+        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file]")
 
 
 def check_version():
@@ -446,10 +446,11 @@ if __name__ == '__main__':
 
     # the first argument will be the log file
     arg_len = len(sys.argv)
-    if arg_len == 4:
+    if arg_len == 5:
         config.OPERATING_SYSTEM = sys.argv[1]
         config.AGENT = sys.argv[2]
-        config.INSTALL_LOG = sys.argv[3]
+        config.APP_DIR = sys.argv[3]
+        config.INSTALL_LOG = sys.argv[4]
     else:
         utils.eprint('Invalid arguments.')
         usage()

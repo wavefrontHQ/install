@@ -87,7 +87,7 @@ class ZookeeperInstaller(inst.PluginInstaller):
             '<Plugin "zookeeper">\n'
             '    Host "{host}"\n'
             '    Port "{port}"\n'
-            '</Plugin>'.format(
+            '</Plugin>\n'.format(
                 host=data['host'],
                 port=data['port']))
         return True

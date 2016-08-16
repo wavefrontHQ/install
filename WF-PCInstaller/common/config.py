@@ -28,4 +28,4 @@ PLUGINS_FILE = 'support_plugins.json'
 PLUGINS_FILE_PATH= 'python_installer/config/' + PLUGINS_FILE
 PLUGIN_CONF_DIR = 'plugin_conf'
 PLUGIN_EXTENSION_DIR = 'plugin_extension'
-APP_DIR = '/tmp/WF-CDPInstaller'
+APP_DIR = 'NOTSET'
