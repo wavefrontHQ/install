@@ -6,7 +6,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class PostgresqlInstaller(inst.PluginInstaller):
+class PostgresqlConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
             "______         _                       _____  _____ _     \n"
@@ -61,13 +61,10 @@ class PostgresqlInstaller(inst.PluginInstaller):
 
     def collect_data(self):
         """
+        sample_url: "postgres://[user[:password]]@host:port[/dbname]"
         data = {
-            instance_name: {
-                db: value,
-                host: value,
-                port: value,
-                user: value,
-                password: value,
+            server_url: {
+                databases: []
             }
         }
         """
@@ -236,6 +233,6 @@ class PostgresqlInstaller(inst.PluginInstaller):
 
 if __name__ == '__main__':
     postgres = PostgresqlInstaller(
-        'DEBIAN', 'postgresql', 'wavefront_postgres.conf')
+        'DEBIAN', 'COLLECTD', 'postgresql', 'wavefront_postgres.conf')
     config.INSTALL_LOG = '/dev/stdout'
     postgres.install()

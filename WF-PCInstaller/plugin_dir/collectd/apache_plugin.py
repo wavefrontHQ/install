@@ -29,7 +29,7 @@ class ApacheInstaller(inst.PluginInstaller):
         server_list = []
         iname_list = []
 
-        a_util.apache_plugin_usage()
+        a_util.plugin_usage()
         while utils.ask('Would you like to add a server to monitor?'):
             # Ask for a instance name that isn't already recorded
             iname = utils.prompt_and_check_input(
@@ -97,5 +97,5 @@ class ApacheInstaller(inst.PluginInstaller):
 
 if __name__ == '__main__':
     apache = ApacheInstaller('DEBIAN', 'apache', 'wavefront_apache.conf')
-    config.INSTALL_LOG = '/dev/null'
+    config.INSTALL_LOG = '/dev/stdout'
     apache.install()

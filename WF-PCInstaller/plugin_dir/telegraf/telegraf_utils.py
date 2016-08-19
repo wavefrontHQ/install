@@ -45,7 +45,10 @@ def edit_conf(conf, key, value):
         search_res = search_re.search(line)
         if search_res is not None:
             conf_list[index] = (
-                '{key} = {value}'.format(key=key, value=value))
+                re.sub(
+                    r'{key} = .*'.format(key=key),
+                    '{key} = {value}'.format(key=key, value=value),
+                    line))
 
     # make sure new line is reinserted
     res_conf = '\n'.join(conf_list)

@@ -199,7 +199,7 @@ def include_apache_es_conf(conf_dir):
     out = utils.write_file(filepath, content)
 
 
-def apache_plugin_usage():
+def plugin_usage():
     utils.cprint(
       'To monitor a apache server, '
       'you must enable the server-status page.\n'
@@ -216,5 +216,6 @@ def apache_plugin_usage():
       '\tapache.org/server-status\n')
 
 if __name__ == '__main__':
+    utils.print_step('Testing module {}'.format(__loader__.fullname))
     # utils.cprint(get_server_list())
     check_dependency("DEBIAN")

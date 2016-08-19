@@ -1,7 +1,13 @@
+"""
+- contains common functions from plugins that can be
+factored out.
+- contains prompts and error messages.
+"""
 import common.install_utils as utils
 import json
 
 
+# common methods extraced out from other plugins
 def check_url(url, url_list=[]):
     """
     check if the url provided is a valid url
@@ -72,7 +78,7 @@ def check_http_response(url):
     return ret_val
     
     
-def get_server_list(check_server_url):
+def get_server_status_list(check_server_url):
     """
     get a list of server-status urls
 
@@ -108,6 +114,39 @@ def get_server_list(check_server_url):
     return server_list
 
 
+def get_host_and_port(def_host='127.0.0.1', def_port=None):
+    """
+    prompt for host and port
+
+    Input:
+        def_host string:
+            sample host
+        def_port string:
+            port numbers
+    Output: tuple of result (host, port)
+    """
+    host = utils.prompt_and_check_input(
+        prompt=(
+            '\nPlease enter the hostname that connects to your '
+            'server:'),
+        check_func=utils.hostname_resolves,
+        usage='{} does not resolve.'.format,
+        usage_fmt=True,
+        default=def_host)
+
+    port = utils.prompt_and_check_input(
+        prompt=(
+            '\nWhat is the TCP-port used to connect to the host?'),
+        check_func=utils.check_valid_port,
+        usage=(
+            'A valid port is a number '
+            'between (0, 65535) inclusive.\n'),
+        default=def_port)
+
+    return (host, port)
+
+
+# other helpers
 def json_dumps(obj):
     """
     return str output of json.dumps

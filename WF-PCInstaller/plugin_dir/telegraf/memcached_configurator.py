@@ -5,9 +5,10 @@ import common.install_utils as utils
 import common.config as config
 import plugin_dir.plugin_installer as inst
 import plugin_dir.utils.plugin_utils as p_utils
+import plugin_dir.telegraf.telegraf_utils as tf_utils
 
 
-class MemcachedInstaller(inst.PluginInstaller):
+class MemcachedConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
     ' __  __                                     _                _ \n'
@@ -23,12 +24,12 @@ class MemcachedInstaller(inst.PluginInstaller):
             'The memcached plugin connects to a memcached server\n'
             'and queries statistics about cache utilization,\n'
             'memory and bandwidth used.\n\n'
-            'To enable collectd memcached plugin,\n'
-            'We just need the hostname and the port to connect\n'
+            'To enable memcached plugin,\n'
+            'hostname and the port are needed to connect\n'
             'to the memcached server.\n')
 
         _ = utils.cinput('Press Enter to continue')
-        utils.print_step('Begin collectd Memcached plugin installer')
+        utils.print_step('Begin telegraf Memcached plugin installer')
 
     def check_dependency(self):
         pass
@@ -36,30 +37,16 @@ class MemcachedInstaller(inst.PluginInstaller):
     def collect_data(self):
         """
         data = {
-            instance_name: {
-                host: value
-                port: value
-            }
+            servers: []
         }
         """
-        data = {}
-        iname_list = []
+        data = {
+            'servers': []
+        }
         server_list = []
 
         while utils.ask('\nWould you like to add a server to monitor?'):
-            iname = utils.prompt_and_check_input(
-                prompt=(
-                    '\nHow would you like to name this monitoring instance?\n'
-                    '(How it should appear on your wavefront metric page, \n'
-                    'space between words will be removed)'),
-                check_func=(
-                    lambda x: x.replace(" ", "") not in iname_list),
-                usage=(
-                    '{} has already been used.'.format),
-                usage_fmt=True).replace(" ", "")
-
             (host, port) = p_utils.get_host_and_port(def_port='11211')
-
             if (host, port) in server_list:
                 utils.eprint(
                     'You have already added this {host}:{port}.'.format(
@@ -67,11 +54,8 @@ class MemcachedInstaller(inst.PluginInstaller):
                 continue
 
             plugin_instance = (
-                '  <Instance "{iname}">\n'
                 '    Host "{host}"\n'
-                '    Port "{port}"\n'
-                '  </Instance>\n').format(
-                    iname=iname,
+                '    Port "{port}"\n').format(
                     host=host, port=port)
 
             utils.cprint()
@@ -80,12 +64,10 @@ class MemcachedInstaller(inst.PluginInstaller):
 
             if res:
                 utils.print_step('Saving instance')
-                iname_list.append(iname)
                 server_list.append((host, port))
-                data[iname] = {
-                    "host": host,
-                    "port": port
-                }
+                data['servers'].append(
+                    '{host}:{port}'.format(
+                        host=host, port=port))
                 utils.print_success()
             else:
                 utils.cprint('This instance is not saved.')
@@ -93,28 +75,27 @@ class MemcachedInstaller(inst.PluginInstaller):
         return data
 
     def output_config(self, data, out):
-        utils.print_step('Begin writing memcached plugin for collectd')
-        if not data:
+        utils.print_step('Begin writing telegraf memcached configuration')
+        server_list = data['servers']
+        count = len(server_list)
+        if not count:
             return False
 
-        out.write('LoadPlugin "memcached"\n')
-        out.write('<Plugin "memcached">\n')
+        conf = tf_utils.get_sample_config('memcached')
+        if conf is None:
+            raise Exception(
+                'Cannot obtain sample config with telegraf command')
 
-        for instance in data:
-            out.write(
-                '  <Instance "{iname}">\n'
-                '    Host "{host}"\n'
-                '    Port "{port}"\n'
-                '  </Instance>\n'.format(
-                    iname=instance,
-                    host=data[instance]['host'],
-                    port=data[instance]['port']))
+        server_list_str = p_utils.json_dumps(server_list)
+          
+        res = tf_utils.edit_conf(
+            conf, 'servers', server_list_str)
 
-        out.write('</Plugin>\n')
+        out.write(res)
         return True
 
 if __name__ == '__main__':
-    mc = MemcachedInstaller(
-        'DEBIAN', 'memcached', 'wavefront_memcached.conf')
+    mc = MemcachedConfigurator(
+        'DEBIAN', 'TELEGRAF', 'memcached', 'wavefront_memcached.conf')
     config.INSTALL_LOG = '/dev/stdout'
     mc.install()

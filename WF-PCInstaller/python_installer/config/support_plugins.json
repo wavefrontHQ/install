@@ -21,13 +21,15 @@
   "data": {
       "support": {
           "TELEGRAF": [
-              "apache", "nginx"
+              "apache", "nginx", "mysql", "memcached", "zookeeper",
+              "redis"
           ],
           "COLLECTD": [
               "apache", "cassandra", "memcached", "mysql", "nginx",
               "postgresql", "redis", "zookeeper"
           ]
       },
+
       "plugins": {
           "apache":
           {
@@ -43,7 +45,7 @@
                   "module": "apache_configurator",
                   "plugin_name": "apache",
                   "class_name": "ApacheConfigurator"
-	      }
+              }
           },
           "cassandra":
           {
@@ -65,6 +67,11 @@
                   "module": "memcached_plugin",
                   "plugin_name": "memcached",
                   "class_name": "MemcachedInstaller"
+              },
+              "TELEGRAF": {
+                  "module": "memcached_configurator",
+                  "plugin_name": "memcached",
+                  "class_name": "MemcachedConfigurator"
               }
           },
           "mysql": 
@@ -76,6 +83,11 @@
                   "module": "mysql_plugin",
                   "plugin_name": "mysql",
                   "class_name": "MySQLInstaller"
+              },
+              "TELEGRAF": {
+                  "module": "mysql_configurator",
+                  "plugin_name": "mysql",
+                  "class_name": "MySQLConfigurator"
               }
           },
           "nginx":
@@ -114,6 +126,11 @@
                   "module": "redis_plugin",
                   "plugin_name": "python",
                   "class_name": "RedisInstaller"
+              },
+              "TELEGRAF": {
+                  "module": "redis_configurator",
+                  "plugin_name": "redis",
+                  "class_name": "RedisConfigurator"
               }
           },
           "zookeeper":
@@ -125,6 +142,11 @@
                   "module": "zookeeper_plugin",
                   "plugin_name": "zookeeper",
                   "class_name": "ZookeeperInstaller"
+              },
+              "TELEGRAF": {
+                  "module": "zookeeper_configurator",
+                  "plugin_name": "zookeeper",
+                  "class_name": "ZookeeperConfigurator"
               }
           }
       }

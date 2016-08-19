@@ -27,10 +27,10 @@ class ApacheConfigurator(inst.PluginInstaller):
         }
         """
         data = {}
-        n_utils.plugin_usage()
+        a_utils.plugin_usage()
 
         # get a server list by passing checking function from utils
-        server_list = p_utils.get_server_list(a_utils.check_server_url)
+        server_list = p_utils.get_server_status_list(a_utils.check_server_url)
         data['urls'] = server_list
 
         return data
@@ -61,5 +61,5 @@ class ApacheConfigurator(inst.PluginInstaller):
 if __name__ == '__main__':
     apache = ApacheConfigurator(
         'DEBIAN', 'COLLECTD', 'apache', 'wavefront_apache.conf')
-    config.INSTALL_LOG = '/dev/null'
+    config.INSTALL_LOG = '/dev/stdout'
     apache.install()

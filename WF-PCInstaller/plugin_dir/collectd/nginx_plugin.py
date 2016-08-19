@@ -63,5 +63,5 @@ class NginxInstaller(inst.PluginInstaller):
 if __name__ == '__main__':
     nginx = NginxInstaller(
         'DEBIAN', 'COLLECTD', 'nginx', 'wavefront_nginx.conf')
-    config.INSTALL_LOG = '/dev/null'
+    config.INSTALL_LOG = '/dev/stdout'
     nginx.install()
