@@ -23,8 +23,14 @@ plugin_dir/collectd/redis_plugin.py
 plugin_dir/collectd/zookeeper_plugin.py
 plugin_dir/telegraf/__init__.py
 plugin_dir/telegraf/apache_configurator.py
+plugin_dir/telegraf/elasticsearch_configurator.py
+plugin_dir/telegraf/memcached_configurator.py
+plugin_dir/telegraf/mysql_configurator.py
 plugin_dir/telegraf/nginx_configurator.py
+plugin_dir/telegraf/postgresql_configurator.py
+plugin_dir/telegraf/redis_configurator.py
 plugin_dir/telegraf/telegraf_utils.py
+plugin_dir/telegraf/zookeeper_configurator.py
 plugin_dir/utils/__init__.py
 plugin_dir/utils/apache_utils.py
 plugin_dir/utils/nginx_utils.py
