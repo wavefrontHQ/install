@@ -1,9 +1,6 @@
 {
   "_comment": {
       "standard_format": "see below",
-      "support": {
-          "agent_name": ["list of supported plugins"]
-      },
       "plugins": {
           "APP_NAME": {
               "app_search": "search_name",
@@ -19,17 +16,6 @@
   },
 
   "data": {
-      "support": {
-          "TELEGRAF": [
-              "apache", "nginx", "mysql", "memcached", "zookeeper",
-              "redis"
-          ],
-          "COLLECTD": [
-              "apache", "cassandra", "memcached", "mysql", "nginx",
-              "postgresql", "redis", "zookeeper"
-          ]
-      },
-
       "plugins": {
           "apache":
           {
@@ -47,6 +33,7 @@
                   "class_name": "ApacheConfigurator"
               }
           },
+
           "cassandra":
           {
               "app_search": "org.apache.cassandra",
@@ -58,6 +45,19 @@
                   "class_name": "CassandraInstaller"
               }
           },
+
+          "elasticsearch":
+          {
+              "app_search": "elasticsearch",
+              "command": "None",
+              "conf_name": "wavefront_elasticsearch.conf",
+              "TELEGRAF": {
+                  "module": "elasticsearch_configurator",
+                  "plugin_name": "elasticsearch",
+                  "class_name": "ElasticsearchConfigurator"
+              }
+          },
+
           "memcached": 
           {
               "app_search": "memcached",
@@ -74,6 +74,7 @@
                   "class_name": "MemcachedConfigurator"
               }
           },
+
           "mysql": 
           {
               "app_search": "mysqld",
@@ -104,8 +105,9 @@
                   "module": "nginx_configurator",
                   "plugin_name": "nginx",
                   "class_name": "NginxConfigurator"
-	      }
+              }
           },
+
           "postgresql":
           {
               "app_search": "postgresql",
@@ -117,6 +119,7 @@
                   "class_name": "PostgresqlInstaller"
               }
           },
+
           "redis":
           {
               "app_search": "redis-server",
@@ -133,6 +136,7 @@
                   "class_name": "RedisConfigurator"
               }
           },
+
           "zookeeper":
           {
               "app_search": "org.apache.zookeeper",

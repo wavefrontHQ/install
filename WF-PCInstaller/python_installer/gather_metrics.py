@@ -166,14 +166,17 @@ def detect_applications():
         data_file.close()
 
     data = data['data']
-    support_list = data['support'][config.AGENT]
+
     plugin_dict = collections.OrderedDict(data['plugins'])
     support_dict = {}
+    support_list = []
 
-    for app in support_list:
+    for app in plugin_dict:
         app_dict = plugin_dict[app]
         if check_app(res, app_dict):
-            support_dict[app] = app_dict
+            if config.AGENT in app_dict:
+                support_list.append(app)
+                support_dict[app] = app_dict
 
     if len(support_list):
         return (support_list, support_dict)
@@ -266,6 +269,7 @@ def installer_menu(app_list, support_dict):
                     name=app_installer, name_pad=name_pad,
                     state=state, state_pad=state_pad,
                     date=date), color)
+
         utils.cprint()
         utils.cprint(
             'To pick a installer, type in the corresponding number '

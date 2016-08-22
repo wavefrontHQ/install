@@ -78,12 +78,12 @@ def check_http_response(url):
     return ret_val
     
     
-def get_server_status_list(check_server_url):
+def get_server_status_list(check_server_status_url):
     """
     get a list of server-status urls
 
     Input:
-        check_server_url(string, []string) bool
+        check_server_status_url(string, []string) bool
           - a function takes a url string and a list of urls
             and return whether the url is valid
     Output:
@@ -93,7 +93,7 @@ def get_server_status_list(check_server_url):
 
     while utils.ask('Would you like to add a server to monitor?'):
         url = None
-        while not check_server_url(url, server_list):
+        while not check_server_status_url(url, server_list):
             url = utils.get_input(
                 'Please enter the url that contains your '
                 'server-status\n'
