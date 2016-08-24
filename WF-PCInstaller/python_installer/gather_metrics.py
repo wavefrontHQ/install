@@ -5,8 +5,17 @@ The main module file that will be invoked by the one line installer.
 Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
 (COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST
 
-If log file is provided, then errors will be logged to such file.
-Otherwise, all errors will be flushed.
+operating system: 
+    Determines the installer control flow.
+agent: 
+    Determines the directory path.
+app_dir: 
+    The location of WF-PCInstaller.
+log file: 
+    Errors will log to this file.
+-TEST: 
+    Installs all detected applications with default setting. 
+    This is for integeration test.  Default is off.
 
 It first checks the dependency this module needs.
 Detects application and calls the appropriate plugin installer.
@@ -36,7 +45,18 @@ INSTALLED = 0
 def usage():
     utils.cprint(
         "Usage: gather_metrics [operating system(DEBIAN|REDHAT)] "
-        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file]")
+        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST\n"
+        "operating system:" 
+        "    Determines the installer control flow."
+        "agent:" 
+        "    Determines the directory path."
+        "app_dir:" 
+        "    The location of WF-PCInstaller."
+        "log file:" 
+        "    Errors will log to this file."
+        "-TEST:" 
+        "    Installs all detected applications with default setting." 
+        "    This is for integeration test.  Default is off.")
 
 
 def check_version():
@@ -137,12 +157,19 @@ def detect_used_ports():
 
 def detect_applications():
     """
-    Detect and install appropriate collectd plugin
+    Detect applications and provide the appropriate plugin information
 
     This function uses unix command ps -ef and check whether
     the supported application is found.
-
     Check current plugin support in support_plugin.json
+
+    Input:
+        None
+    Output:
+        support_list []:
+            the list of supported plugins that were detected
+        support_dict {}
+            the dictionary associated with each supported plugin
     """
 
     plugins_file = config.PLUGINS_FILE_PATH
@@ -180,7 +207,7 @@ def detect_applications():
     if len(support_list):
         return (support_list, support_dict)
     else:
-        utils.cprint('No supported app plugin is detected')
+        utils.eprint('No supported app plugin is detected.')
         sys.exit(0)
 
 
@@ -188,8 +215,10 @@ def installer_menu(app_list, support_dict):
     """
     provide the menu and prompts for the user to interact with the installer
 
-    app_list: list of app detected that has support plugin
-    support_dict: dict that associates with each app in app_list
+    app_list []: 
+        list of app detected that plugin support
+    support_dict {}: 
+        dict that associates with each app in app_list
 
     installer flow:
       1. show selections
@@ -309,11 +338,14 @@ def installer_menu(app_list, support_dict):
     return count
 
 
-def run_installer(agent, app_dict):
+def run_installer(agent, app_dict, TEST=False):
     if agent == config.COLLECTD:
         plugin_dir = config.COLLECTD_PLUGIN_DIR
     elif agent == config.TELEGRAF:
         plugin_dir = config.TELEGRAF_PLUGIN_DIR
+
+    if TEST:
+        plugin_dir += "/test"
 
     plugin_dir = plugin_dir.replace('/', '.')
     Installer = getattr(
@@ -330,6 +362,23 @@ def run_installer(agent, app_dict):
 
     return instance.install()
  
+
+def test_installer(app_list, support_dict):
+    """
+    run each detected app with the test installer
+
+    append module with '_test'
+    prepend conf_name with 'test_'
+    append class_name with 'Test'
+    """
+    for app in app_list:
+        app_dict = support_dict[app]
+        test_conf = 'test_{0}'.format(app_dict['conf_name'])
+        app_dict['conf_name'] = test_conf
+        app_dict['module'] += '_test'
+        app_dict['class_name'] += 'Test'
+        run_installer(config.AGENT, support_dict[app], TEST=True)
+
 
 def check_install_state(app_list):
     """
@@ -442,14 +491,16 @@ def check_option(option, max_length):
         return None
     return res
 
-if __name__ == '__main__':
+
+def main():
     check_version()
     conf.check_collectd_exists()
     conf.check_collectd_path()
 
-    # the first argument will be the log file
+    # TODO: change the cmd args to switch statement
+    # so order doesnt matter
     arg_len = len(sys.argv)
-    if arg_len == 5:
+    if arg_len == 5 or arg_len == 6:
         config.OPERATING_SYSTEM = sys.argv[1]
         config.AGENT = sys.argv[2]
         config.APP_DIR = sys.argv[3]
@@ -459,16 +510,30 @@ if __name__ == '__main__':
         usage()
         sys.exit(1)
 
+    # if sixth arg exists
+    if arg_len == 6:
+        if sys.argv[5] == '-TEST':
+            config.TEST = True
+
     if config.DEBUG:
         utils.print_warn('DEBUG IS ON')
 
-    (s_list, s_dict) = detect_applications()
+    (app_list, app_dict) = detect_applications()
 
     try:
-        if installer_menu(s_list, s_dict):
-            sys.exit(0)
+        if config.TEST:
+            test_installer(app_list, app_dict)
         else:
-            sys.exit(1)
+            # if at least one installer is ran to completion, 
+            # then exit with success
+            if installer_menu(app_list, app_dict):
+                sys.exit(0)
+            else:
+                sys.exit(1)
     except KeyboardInterrupt:
         utils.eprint('\nQuitting the installer via keyboard interrupt.')
-        sys.exit(1)
+        sys.exit(1)   
+
+
+if __name__ == '__main__':
+    main()

@@ -1,6 +1,6 @@
 # install script will pass in the name of log file
 INSTALL_LOG = None
-DEBUG = False
+DEBUG = True
 OPERATING_SYSTEM = None
 AGENT = None
 DEBIAN = 'DEBIAN'
@@ -8,6 +8,7 @@ REDHAT = 'REDHAT'
 COLLECTD = "COLLECTD"
 TELEGRAF = "TELEGRAF"
 INSTALL_STATE_FILE = 'install_state.json'
+TEST = False
 
 # collectd
 COLLECTD_HOME = '/etc/collectd'

@@ -66,7 +66,7 @@ class PostgresqlConfigurator(inst.PluginInstaller):
                 db: value,
                 host: value,
                 port: value,
-                user: value,
+                username: value,
                 password: value,
             }
         }
@@ -235,7 +235,7 @@ class PostgresqlConfigurator(inst.PluginInstaller):
         return True
 
 if __name__ == '__main__':
-    postgres = PostgresqlInstaller(
-        'DEBIAN', 'postgresql', 'wavefront_postgres.conf')
+    postgres = PostgresqlConfigurator(
+        'DEBIAN', 'COLLECTD', 'postgresql', 'wavefront_postgres.conf')
     config.INSTALL_LOG = '/dev/stdout'
     postgres.install()

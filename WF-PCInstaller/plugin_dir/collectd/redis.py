@@ -82,6 +82,17 @@ class RedisConfigurator(inst.PluginInstaller):
             raise Exception('Failed to move the plugin.')
 
     def collect_data(self):
+        """
+        data = {
+            instance_name: {
+                host: value,
+                port: value,
+            (optional)
+                auth: value,
+                slave: bool
+            }
+        }
+        """
         data = {}
         iname_list = []
         server_list = []
@@ -166,12 +177,6 @@ class RedisConfigurator(inst.PluginInstaller):
         return data
 
     def output_config(self, data, out):
-        """
-        Flow:
-        ask for instance name
-        then ask for hostname, port
-        ask for auth
-        """
         if not data:
             return False
 
@@ -280,7 +285,7 @@ class RedisConfigurator(inst.PluginInstaller):
         return True
 
 if __name__ == '__main__':
-    redis = RedisInstaller(
-        'DEBIAN', 'python', 'wavefront_redis.conf')
-    config.INSTALL_LOG = '/dev/null'
+    redis = RedisConfigurator(
+        'DEBIAN', 'COLLECTD', 'python', 'wavefront_redis.conf')
+    config.INSTALL_LOG = '/dev/stdout'
     redis.install()

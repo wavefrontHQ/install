@@ -15,6 +15,8 @@ setup(
             'plugin_conf': ['*.conf'],
             'plugin_extension': ['*.py'],
             'plugin_dir': ['collectd/*.py'],
+            'plugin_dir': ['collectd/test/*.py'],
+            'plugin_dir': ['telegraf/test/*.py'],
             'plugin_dir': ['telegraf/*.py'],
             'plugin_dir': ['utils/*.py']
         }
