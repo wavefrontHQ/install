@@ -10,7 +10,7 @@ import plugin_dir.plugin_installer as inst
 import plugin_dir.utils.nginx_utils as n_utils
 
 
-class NginxInstaller(inst.PluginInstaller):
+class NginxConfigurator(inst.PluginInstaller):
     def title(self):
         n_utils.title()
 

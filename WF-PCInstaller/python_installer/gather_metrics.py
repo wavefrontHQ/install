@@ -3,7 +3,7 @@
 The main module file that will be invoked by the one line installer.
 
 Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
-(COLLECTD|TELEGRAF)] [APP_DIR] [log file]
+(COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST
 
 If log file is provided, then errors will be logged to such file.
 Otherwise, all errors will be flushed.
@@ -113,9 +113,8 @@ def check_app(output, app_dict):
                 return False
             elif utils.command_exists(cmd):
                 return True
-        return False
 
-    return True
+    return False
 
 
 def detect_used_ports():
@@ -321,8 +320,8 @@ def run_installer(agent, app_dict):
         importlib.import_module(
             '{direc}.{mod}'.format(
                 direc=plugin_dir,
-                mod=app_dict[agent]['module'])),
-        app_dict[agent]['class_name'])
+                mod=app_dict['module'])),
+        app_dict['class_name'])
     instance = Installer(
         config.OPERATING_SYSTEM,
         agent,

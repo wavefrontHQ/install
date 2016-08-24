@@ -6,8 +6,8 @@
               "app_search": "search_name",
               "command": "commands that came with the app",
               "conf_name": "plugin_conf_filename",
+              "module": "python_module_name",
               "AGENT": {
-                  "module": "python_module_name",
                   "plugin_name": "For COLLECTD, this is name of plugin used. For TELEGRAF, this is the name to query sample config",
                   "class_name": "installer_name"
               }
@@ -22,15 +22,13 @@
               "app_search": "apache2|httpd",
               "command": "apache2|httpd",
               "conf_name": "wavefront_apache.conf",
+              "module": "apache",
+              "class_name": "ApacheConfigurator",
               "COLLECTD": {
-                  "module": "apache_plugin",
-                  "plugin_name": "apache",
-                  "class_name": "ApacheInstaller"
+                  "plugin_name": "apache"
               },
               "TELEGRAF": {
-                  "module": "apache_configurator",
-                  "plugin_name": "apache",
-                  "class_name": "ApacheConfigurator"
+                  "plugin_name": "apache"
               }
           },
 
@@ -39,10 +37,10 @@
               "app_search": "org.apache.cassandra",
               "command": "cassandra|nodetool",
               "conf_name": "wavefront_cassandra.conf",
+              "module": "cassandra",
+              "class_name": "CassandraConfigurator",
               "COLLECTD": {
-                  "module": "cassandra_plugin",
-                  "plugin_name": "java",
-                  "class_name": "CassandraInstaller"
+                  "plugin_name": "java"
               }
           },
 
@@ -51,10 +49,10 @@
               "app_search": "elasticsearch",
               "command": "None",
               "conf_name": "wavefront_elasticsearch.conf",
+              "module": "elasticsearch",
+              "class_name": "ElasticsearchConfigurator",
               "TELEGRAF": {
-                  "module": "elasticsearch_configurator",
-                  "plugin_name": "elasticsearch",
-                  "class_name": "ElasticsearchConfigurator"
+                  "plugin_name": "elasticsearch"
               }
           },
 
@@ -63,15 +61,13 @@
               "app_search": "memcached",
               "command": "memcached",
               "conf_name": "wavefront_memcached.conf",
+              "module": "memcached",
+              "class_name": "MemcachedConfigurator",
               "COLLECTD": {
-                  "module": "memcached_plugin",
-                  "plugin_name": "memcached",
-                  "class_name": "MemcachedInstaller"
+                  "plugin_name": "memcached"
               },
               "TELEGRAF": {
-                  "module": "memcached_configurator",
-                  "plugin_name": "memcached",
-                  "class_name": "MemcachedConfigurator"
+                  "plugin_name": "memcached"
               }
           },
 
@@ -80,15 +76,13 @@
               "app_search": "mysqld",
               "command": "mysql|mysqld",
               "conf_name": "wavefront_mysql.conf",
+              "module": "mysql",
+              "class_name": "MySQLConfigurator",
               "COLLECTD": {
-                  "module": "mysql_plugin",
-                  "plugin_name": "mysql",
-                  "class_name": "MySQLInstaller"
+                  "plugin_name": "mysql"
               },
               "TELEGRAF": {
-                  "module": "mysql_configurator",
-                  "plugin_name": "mysql",
-                  "class_name": "MySQLConfigurator"
+                  "plugin_name": "mysql"
               }
           },
           "nginx":
@@ -96,15 +90,13 @@
               "app_search": "nginx",
               "command": "nginx",
               "conf_name": "wavefront_nginx.conf",
+              "module": "nginx",
+              "class_name": "NginxConfigurator",
               "COLLECTD": {
-                  "module": "nginx_plugin",
-                  "plugin_name": "nginx",
-                  "class_name": "NginxInstaller"
+                  "plugin_name": "nginx"
               },
               "TELEGRAF": {
-                  "module": "nginx_configurator",
-                  "plugin_name": "nginx",
-                  "class_name": "NginxConfigurator"
+                  "plugin_name": "nginx"
               }
           },
 
@@ -113,10 +105,10 @@
               "app_search": "postgresql",
               "command": "psql",
               "conf_name": "wavefront_postgres.conf",
+              "module": "postgresql",
+              "class_name": "PostgresqlConfigurator",
               "COLLECTD": {
-                  "module": "postgresql_plugin",
-                  "plugin_name": "postgresql",
-                  "class_name": "PostgresqlInstaller"
+                  "plugin_name": "postgresql"
               }
           },
 
@@ -125,15 +117,13 @@
               "app_search": "redis-server",
               "command": "redis-cli",
               "conf_name": "wavefront_redis.conf",
+              "module": "redis",
+              "class_name": "RedisConfigurator",
               "COLLECTD": {
-                  "module": "redis_plugin",
-                  "plugin_name": "python",
-                  "class_name": "RedisInstaller"
+                  "plugin_name": "python"
               },
               "TELEGRAF": {
-                  "module": "redis_configurator",
-                  "plugin_name": "redis",
-                  "class_name": "RedisConfigurator"
+                  "plugin_name": "redis"
               }
           },
 
@@ -142,15 +132,13 @@
               "app_search": "org.apache.zookeeper",
               "command": "None",
               "conf_name": "wavefront_zookeeper.conf",
+              "module": "zookeeper",
+              "class_name": "ZookeeperConfigurator",
               "COLLECTD": {
-                  "module": "zookeeper_plugin",
-                  "plugin_name": "zookeeper",
-                  "class_name": "ZookeeperInstaller"
+                  "plugin_name": "zookeeper"
               },
               "TELEGRAF": {
-                  "module": "zookeeper_configurator",
-                  "plugin_name": "zookeeper",
-                  "class_name": "ZookeeperConfigurator"
+                  "plugin_name": "zookeeper"
               }
           }
       }

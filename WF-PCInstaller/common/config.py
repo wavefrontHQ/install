@@ -16,6 +16,7 @@ COLLECTD_INSTALL_STATE_FILE_PATH = '{}/{}'.format(
     COLLECTD_CONF_DIR, INSTALL_STATE_FILE)
 COLLECTD_PLUGIN_DIR = 'plugin_dir/collectd'
 COLLECTD_PYTHON_PLUGIN_PATH = '/opt/collectd/plugins/python'
+COLLECTD_PLUGIN_TEST_DIR = COLLECTD_PLUGIN_DIR + '/test'
 # telegraf
 TELEGRAF_HOME = '/etc/telegraf'
 TELEGRAF_CONF_DIR = TELEGRAF_HOME + '/telegraf.d'

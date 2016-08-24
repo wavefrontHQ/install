@@ -8,7 +8,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class MySQLInstaller(inst.PluginInstaller):
+class MySQLConfigurator(inst.PluginInstaller):
     def title(self):
         art = (
           ' ****     ****           ********   *******    **      \n'

@@ -8,7 +8,7 @@ import plugin_dir.plugin_installer as inst
 import plugin_dir.utils.apache_utils as a_util
 
 
-class ApacheInstaller(inst.PluginInstaller):
+class ApacheConfigurator(inst.PluginInstaller):
     def title(self):
         a_util.title()
 
@@ -96,6 +96,7 @@ class ApacheInstaller(inst.PluginInstaller):
         return True
 
 if __name__ == '__main__':
-    apache = ApacheInstaller('DEBIAN', 'apache', 'wavefront_apache.conf')
+    apache = ApacheInstaller(
+        'DEBIAN', 'COLLECTD', 'apache', 'wavefront_apache.conf')
     config.INSTALL_LOG = '/dev/stdout'
     apache.install()

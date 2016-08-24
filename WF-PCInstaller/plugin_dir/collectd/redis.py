@@ -6,7 +6,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class RedisInstaller(inst.PluginInstaller):
+class RedisConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
             ",-.----.                                              \n"

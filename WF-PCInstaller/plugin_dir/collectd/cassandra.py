@@ -8,7 +8,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class CassandraInstaller(inst.PluginInstaller):
+class CassandraConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
             '   ____                              _           \n'

@@ -7,7 +7,7 @@ import plugin_dir.plugin_installer as inst
 import plugin_dir.utils.plugin_utils as p_utils
 
 
-class MemcachedInstaller(inst.PluginInstaller):
+class MemcachedConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
     ' __  __                                     _                _ \n'

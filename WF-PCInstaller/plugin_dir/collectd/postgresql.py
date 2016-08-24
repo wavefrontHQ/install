@@ -6,7 +6,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class PostgresqlInstaller(inst.PluginInstaller):
+class PostgresqlConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
             "______         _                       _____  _____ _     \n"

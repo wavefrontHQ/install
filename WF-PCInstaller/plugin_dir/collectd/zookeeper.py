@@ -6,7 +6,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class ZookeeperInstaller(inst.PluginInstaller):
+class ZookeeperConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
     '__________             __                                       \n'
