@@ -1,3 +1,6 @@
+"""
+cassandra 3.7.0 (Ubuntu 14.04)
+"""
 import re
 
 import common.install_utils as utils
@@ -5,7 +8,7 @@ import plugin_dir.plugin_installer as inst
 import common.config as config
 
 
-class CassandraInstaller(inst.PluginInstaller):
+class CassandraConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
             '   ____                              _           \n'
@@ -43,51 +46,70 @@ class CassandraInstaller(inst.PluginInstaller):
                     'Missing libjvm dependency for collectd java plugin.')
         utils.print_success()
 
-    def write_plugin(self, out):
-        count = 0  # number of server being monitored
+    def collect_data(self):
+        data = {}
         # ServiceURL "service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi"
 
         utils.print_step('Begin writing Cassandra plugin for collectd')
         url = None
 
-        while not count:
-            while not self.check_JMXServiceURL(url):
-                self.url_usage()
-                url = utils.get_input(
-                    'Please enter a valid JMXServiceURL that can reach\n'
-                    'your MBeanServer',
-                    default='service:jmx:rmi:'
-                    '///jndi/rmi://localhost:7199/jmxrmi')
-                utils.cprint()
+        url = utils.prompt_and_check_input(
+            prompt=(
+                '\nPlease enter a valid JMXServiceURL that can reach\n'
+                'your MBeanServer'),
+            default=(
+                'service:jmx:rmi:'
+                '///jndi/rmi://localhost:7199/jmxrmi'),
+            check_func=self.check_JMXServiceURL,
+            usage=self.url_usage).replace(" ", "")
 
-            plugin_instance = (
-                '      ServiceURL "{url}"\n').format(url=url)
+        plugin_instance = (
+            '      ServiceURL "{url}"\n').format(url=url)
 
-            if utils.ask(
-                  'Is a valid account required to authenticate to '
-                  'the server?\n'
-                  '(If not, "monitorRole" will be used.)', None):
-                user = utils.get_input(
-                    'What is the username?')
-                password = utils.get_input(
-                    'What is the password?')
-                plugin_instance += (
-                    '      User "{user}"\n'
-                    '      Password "{password}"\n'.format(
-                        user=user, password=password))
+        protected = utils.ask(
+              'Is a valid account required to authenticate to '
+              'the server?\n'
+              '(If not, "monitorRole" will be used.)', None)
+        if protected:
+            user = utils.get_input(
+                'What is the username?')
+            password = utils.get_input(
+                'What is the password?')
+            plugin_instance += (
+                '      User "{user}"\n'
+                '      Password "{password}"\n').format(
+                    user=user, password=password)
 
-            utils.cprint()
-            utils.cprint('Result:\n{}'.format(plugin_instance))
-            res = utils.ask(
-                'Is the above information correct?')
-            if res:
-                # pull and edit the conf file
-                self.edit_cass_conf(out, plugin_instance)
-                count += 1
-            else:
-                url = None
+        utils.cprint()
+        utils.cprint('Result:\n{}'.format(plugin_instance))
+        res = utils.ask(
+            'Is the above information correct?')
+        if res:
+            # pull and edit the conf file
+            data = {
+                'url': url
+            }
+            if protected:
+                data['user'] = user
+                data['password'] = password
+        else:
+            url = None
 
-        return count
+        return data
+
+    def output_config(self, data, out):
+        plugin_instance = (
+            '      ServiceURL "{url}"\n').format(
+              url=data['url'])
+        if 'user' in data:
+            plugin_instance += (
+                '      User "{user}"\n'
+                '      Password "{password}"\n').format(
+                    user=data['user'],
+                    password=data['password'])
+        self.edit_cass_conf(out, plugin_instance)
+
+        return True
 
     def edit_cass_conf(self, out, plugin_instance):
         """

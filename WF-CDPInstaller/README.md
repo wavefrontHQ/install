@@ -1,1 +1,0 @@
-Wavefront Collectd Python Installer
