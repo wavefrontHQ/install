@@ -881,20 +881,20 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/435740/WF-PCInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/437858/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
         if [ ! -d "/tmp/${APP_CONFIGURE_NAME}" ]; then
             mkdir -p /tmp/${APP_CONFIGURE_NAME}
         fi
-        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/${APP_CONFIGURE_NAME} >>${INSTALL_LOG} 2>&1
+        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/ >>${INSTALL_LOG} 2>&1
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to extract configuration files"
         fi
         echo_success
         if command_exists python; then
-            APP_DIR="/tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME"
+            APP_DIR="/tmp/$APP_CONFIGURE_NAME"
             cd $APP_DIR
             if [ "$TEST_APP_CONFIGURE" == "yes" ]; then
                 python -m python_installer.gather_metrics ${OPERATING_SYSTEM} COLLECTD ${APP_DIR} ${INSTALL_LOG} "-TEST"
@@ -933,7 +933,7 @@ fi
 
 if [ "$APP_CONFIGURE" == "yes" ]; then
     echo "To restart WF-CDPInstaller"
-    echo "Navigate to /tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME and type"
+    echo "Navigate to ${APP_DIR} and type"
     echo "python -m python_installer.gather_metrics"
     echo "Restart the collectd service afterward to see the change"
 fi

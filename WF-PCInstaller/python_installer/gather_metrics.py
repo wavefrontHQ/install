@@ -108,24 +108,37 @@ def check_app(output, app_dict):
 
     Note: lax search, but user has potentially more options 
     to pick installers
+
     """
     app_search = app_dict['app_search']
     app_cmds = app_dict['command'].split('|')
 
-#    app_re = re.search(
-#        r' ({app_search})\n'.format(
-#            app_search=app_search), output.decode())
+    # lax app search
+    app_re = re.compile(
+        r'({app_search})'.format(
+            app_search=app_search))
+    # prevent self detection
+    script_re = re.compile(
+        r'root(.*)bash -c #!/bin/bash # Install Wavefront Proxy and '
+        'configures(.*)function logo')
 
+    app_found = False
     for line in output.decode().split('\n'):
-        app_re = re.search(
-            r'({app_search})'.format(
-                app_search=app_search), line)
-        if app_re is not None:
-            if config.DEBUG:
-                utils.eprint(line)
-            return True
+        self_res = script_re.match(line)
 
-    if app_re is None:
+        if self_res is None:
+            app_found = app_re.search(line)
+            if app_found is not None:
+                if config.DEBUG:
+                    utils.eprint(line)
+                return True
+        else:
+            if config.DEBUG:
+                utils.eprint(
+                    'Detected self with match:\n{}'.format(
+                        self_res.group()))
+
+    if app_found is None:
         for cmd in app_cmds:
             if config.DEBUG:
                 utils.eprint('Command: {}'.format(cmd))
