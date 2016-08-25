@@ -15,7 +15,7 @@ class ApacheConfiguratorTest(
         }
         """
         data = {
-            "docker_test": "http://localhost/server-status"
+            "docker_test": "http://localhost/server-status?auto"
         }
         return data
  

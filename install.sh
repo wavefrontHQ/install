@@ -107,6 +107,11 @@ do
             ;;
         --test_app_configure)
             TEST_APP_CONFIGURE="yes"
+            INSTALL_COLLECTD="yes"
+            PROXY="localhost"
+            PROXY_PORT="4242"
+            OVERWRITE_COLLECTD_CONFIG="yes"
+            APP_CONFIGURE="yes"
             shift
             ;;
         --log)
@@ -881,7 +886,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/437858/WF-PCInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/438060/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"

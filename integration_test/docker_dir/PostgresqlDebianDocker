@@ -1,0 +1,17 @@
+##############################################################
+# Dockerfile to build 
+# # Based on 
+# ############################################################
+
+FROM ubuntu:itest
+
+apt-get -y install postgresql
+su - postgres
+
+# initialize the user and database for testing
+ADD helpers/postgresql/init.sql /docker-entrypoint-initdb.d/
+
+WORKDIR ~/
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh
+CMD ["bash"]

@@ -1,0 +1,15 @@
+##############################################################
+# Dockerfile to build Apache env in Debian system
+# # Based on Ubuntu 14.04u
+# ############################################################
+
+FROM ubuntu:itest
+RUN apt-get -y install apache2
+# extendedstatus is needed to enable detail metrics for server-status
+ADD helpers/apache/extendedstatus.conf /etc/apache2/conf-enabled
+RUN sed -i '/\<VirtualHost .*:[0-9]*\>/a \<Location \/server-status\>\n\  \
+	    SetHandler server-status\n\<\/Location\>\n' \
+	    /etc/apache2/sites-available/000-default.conf
+WORKDIR ~/
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

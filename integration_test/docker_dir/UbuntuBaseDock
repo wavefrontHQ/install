@@ -1,0 +1,9 @@
+##############################################################
+# Base Dockerfile to build images off from to test plugins
+# # Based on Ubuntu 14.04
+# ############################################################
+
+from ubuntu:14.04
+RUN apt-get update
+RUN apt-get -y install python
+RUN apt-get -y install curl
