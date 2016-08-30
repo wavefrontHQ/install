@@ -9,39 +9,44 @@
 + \*Dock are Dockerfiles
 
 ## Main usage:
-run ./integration\_test to begin testing
+./integration\_test
+
+Run the script to begin testing
     
     Note:
-        Change the one line installer src link with the var SRC\_URL
+        Change the one line installer src link with the var SRC_URL
         to test different installer.
 
 ## Script explaination:
-integration\_test.sh
-    The script to be called when testing one line installer
-    integration.
+####integration\_test.sh
+
+The script to be called when testing one line installer
+integration.
 
     description:
         Builds the base docker image.
         For each application that the installer is testing against,
         build the appropriate environment using the
-        Dockfile located under /docker\_dir and runs
+        Dockfile located under /docker_dir and runs
         the container with by providing the appropriate
         parameters.
     
-scripts locate under  /docker\_dir/test\_script
+**scripts locate under  /docker\_dir/test\_script
 pulled into the testing environment to run
-the one line installer and listen for the metrics
+the one line installer and listen for the metrics**
 
-test.sh [ --src\_url <url> | --keymetric <keyword> ]
+####test.sh [ --src\_url <url> | --keymetric <keyword> ]
+
     Script within the docker container that accepts
     one line installer script src url and a keymetric.
 
     description: 
         Runs the one line installer via sudo bash -c curl.
-        call plugin\_tester.py by passing keymetric.
+        call plugin_tester.py by passing keymetric.
 
-plugin\_tester.py [keymetric]
-    Acts as proxy and listen to default opentsdb port (4242)
+####plugin\_tester.py [keymetric]
+
+Acts as proxy and listen to default opentsdb port (4242)
 
     description:
         Listen to the socket at 4242 and check whether

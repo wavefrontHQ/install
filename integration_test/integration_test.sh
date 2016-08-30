@@ -3,7 +3,7 @@ SRC_URL="https://raw.githubusercontent.com/kentwang929/install/WF-PCInstallerTes
 
 # check if base image is built
 function check_base() {
-  if [ "$(docker images -q ubuntu:itest 2> /dev/null)" == "" ]; then
+  if [ "$(sudo docker images -q ubuntu:itest 2> /dev/null)" == "" ]; then
       echo "Please build base images first"
       exit 1
   fi
@@ -15,9 +15,9 @@ function test_apache() {
 
     # apache test
     # build apache env
-    docker build -t "apache:test" -f docker_dir/ApacheDebianDock docker_dir/
+    sudo docker build -t "apache:test" -f docker_dir/ApacheDebianDock docker_dir/
     # perform the test
-    docker run -it --cap-add SETPCAP \
+    sudo docker run -it --cap-add SETPCAP \
             --cap-add SETUID --cap-add SETGID \
             --cap-add DAC_READ_SEARCH \
             "apache:test" \
@@ -33,7 +33,7 @@ function test_apache() {
 
 function main() {
     # building base ubuntu images
-    docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
+    sudo docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
     test_apache
 }
 
