@@ -1,3 +1,4 @@
-CREATE USER docker_test;
-CREATE DATABASE docker_test;
-GRANT ALL PRIVILEGES ON DATABASE docker_test TO docker_test;
+CREATE USER docker;
+CREATE DATABASE docker;
+GRANT ALL PRIVILEGES ON DATABASE docker TO docker;
+ALTER USER docker WITH PASSWORD 'docker';

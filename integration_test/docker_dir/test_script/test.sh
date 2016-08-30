@@ -69,7 +69,7 @@ python plugin_tester.py ${KEYMETRIC}
 
 # grab the log from collectd to output failure
 if [ $? -ne 0 ]; then
-    if [ -f "/var/log/collectd.log" ]; then
+    if [ -e "/var/log/collectd.log" ]; then
         cat /var/log/collectd.log
         exit 1
     else

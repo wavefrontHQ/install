@@ -5,11 +5,11 @@
 + docker\_dir/test\_scripts/test.sh
 + docker\_dir/test\_script/plugin\_tester.py
 + docker\_dir/helpers contain helpful files
-+ that Dockerfiles may need when setting up the environment
+that Dockerfiles may need when setting up the environment
 + \*Dock are Dockerfiles
 
 ## Main usage:
-./integration\_test
+####./integration\_test.sh
 
 Run the script to begin testing
     

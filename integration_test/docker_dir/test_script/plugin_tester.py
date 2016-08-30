@@ -66,6 +66,7 @@ if __name__ == "__main__":
         keyword = sys.argv[1]
         server = Server("127.0.0.1", 4242, sys.argv[1])
     else:
+        logging.debug("Usage: plugin_tester.py [keymetric].")
         sys.exit(1)
 
     try:
