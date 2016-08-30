@@ -1,9 +1,12 @@
-SRC_URL="https://raw.githubusercontent.com/kentwang929/install/WF-PCInstallerTest/install.sh"
+#!/bin/bash
 
+SRC_URL="https://raw.githubusercontent.com/kentwang929/install/WF-PCInstallerTest2/install.sh"
+SUDO="" # enable "sudo " in Debian
+IMAGE=""
 
 # check if base image is built
 function check_base() {
-  if [ "$(docker images -q ubuntu:itest 2> /dev/null)" == "" ]; then
+  if [ "$(${SUDO}docker images -q ubuntu:itest 2> /dev/null)" == "" ]; then
       echo "Please build base images first"
       exit 1
   fi
@@ -15,9 +18,9 @@ function test_apache() {
 
     # apache test
     # build apache env
-    docker build -t "apache:test" -f docker_dir/ApacheDebianDock docker_dir/
+    ${SUDO}docker build -t "apache:test" -f docker_dir/ApacheDebianDock docker_dir/
     # perform the test
-    docker run -it --cap-add SETPCAP \
+    ${SUDO}docker run -it --cap-add SETPCAP \
             --cap-add SETUID --cap-add SETGID \
             --cap-add DAC_READ_SEARCH \
             "apache:test" \
@@ -34,10 +37,10 @@ function test_apache() {
 function test_postgresql() {
     check_base
 
-    # build apache env
-    docker build -t "postgres:test" -f docker_dir/PostgresqlDebianDock docker_dir/
+    # build env
+    ${SUDO}docker build -t "postgres:test" -f docker_dir/PostgresqlDebianDock docker_dir/
     # perform the test
-    docker run -it --cap-add SETPCAP \
+    ${SUDO}docker run -it --cap-add SETPCAP \
             --cap-add SETUID --cap-add SETGID \
             --cap-add DAC_READ_SEARCH \
             "postgres:test" \
@@ -51,12 +54,32 @@ function test_postgresql() {
 }
 
 
+function test_redis() {
+    check_base
+
+    # build env
+    ${SUDO}docker build -t "redis:test" -f docker_dir/RedisDebianDock docker_dir/
+    # perform the test
+    ${SUDO}docker run -it --cap-add SETPCAP \
+            --cap-add SETUID --cap-add SETGID \
+            --cap-add DAC_READ_SEARCH \
+            "redis:test" \
+            bash -c "./init.sh && ./test.sh --src_url ${SRC_URL} --keymetric redis_info.docker_test"
+
+    if [ $? -ne 0 ]; then
+        echo "Redis failed"
+    else
+        echo "Redis succeeded"
+    fi
+}
+
 
 function main() {
     # building base ubuntu images
-    docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
+    ${SUDO}docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
     test_apache
     test_postgresql 
+    test_redis
 }
 
 main

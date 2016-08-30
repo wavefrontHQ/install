@@ -68,8 +68,8 @@ class RedisConfiguratorTest(
         """
         data = {
             'docker_test': {
-                'host': host,
-                'port': port
+                'host': 'localhost',
+                'port': '6379'
             }
         }
         return data
