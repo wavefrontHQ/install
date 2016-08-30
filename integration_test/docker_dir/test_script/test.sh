@@ -64,6 +64,15 @@ if [ -z "$SRC_URL" ] || [ -z "$KEYMETRIC" ]; then
 fi
 
 # one line installer
-# bash -c "$(curl -sL ${SRC_URL})"
 bash -c "$(curl -sL ${SRC_URL})" "--" "--test_app_configure"
 python plugin_tester.py ${KEYMETRIC}
+
+# grab the log from collectd to output failure
+if [ $? -ne 0 ]; then
+    if [ -f "/var/log/collectd.log" ]; then
+        cat /var/log/collectd.log
+        exit 1
+    else
+        echo -e "\nTest has failed, but no log message can be found."
+    fi
+fi

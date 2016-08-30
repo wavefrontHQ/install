@@ -31,14 +31,13 @@ integration.
         the container with by providing the appropriate
         parameters.
     
-**scripts locate under  /docker\_dir/test\_script
-pulled into the testing environment to run
-the one line installer and listen for the metrics**
+**Below are scripts locate under  /docker\_dir/test\_script
+that are pulled into the testing environment to run**
 
 ####test.sh [ --src\_url <url> | --keymetric <keyword> ]
 
-    Script within the docker container that accepts
-    one line installer script src url and a keymetric.
+Script within the docker container that accepts
+one line installer script src url and a keymetric.
 
     description: 
         Runs the one line installer via sudo bash -c curl.
