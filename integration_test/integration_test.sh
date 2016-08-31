@@ -73,13 +73,34 @@ function test_redis() {
     fi
 }
 
+function test_debian() {
+    check_base
+
+    # build env
+    ${SUDO}docker build -t "app:test" -f docker_dir/UbuntuAppDock docker_dir/
+
+    KEYMETRICS="apache.docker_test postgresql.docker_test redis_info.docker_test"
+    # perform the test
+    ${SUDO}docker run -it --cap-add SETPCAP \
+            --cap-add SETUID --cap-add SETGID \
+            --cap-add DAC_READ_SEARCH \
+            "app:test" \
+            bash -c "./init.sh && ./test.sh --src_url ${SRC_URL} --keymetric '${KEYMETRICS}'"
+
+    if [ $? -ne 0 ]; then
+        echo "Test failed"
+    else
+        echo "Test succeeded"
+    fi
+}
 
 function main() {
     # building base ubuntu images
     ${SUDO}docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
-    test_apache
-    test_postgresql 
-    test_redis
+    # test_apache
+    # test_postgresql 
+    # test_redis
+    test_debian
 }
 
 main

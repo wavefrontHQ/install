@@ -3,11 +3,18 @@ import socket
 import sys
 import time
 
-def handle(connection, address, keyword):
+def handle(connection, address, keywords):
     import logging
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger("process-%r" % (address,))
     start_time = time.time()
+
+    # using dict to keep track of what has been seen
+    # initialization
+    key_map = {}
+    for key in keywords:
+        key_map[key] = False
+
     try:
         logger.debug("Connected %r at %r", connection, address)
         while True:
@@ -16,9 +23,20 @@ def handle(connection, address, keyword):
                 logger.debug("Socket closed remotely")
                 break
             logger.debug("Received data %r", data)
-            if keyword in data:
+            # if key that has not been found is found in the data,
+            # change the mapping of that key to true
+            for key in key_map:
+                if not key_map[key]:
+                    if key in data:
+                        logger.debug("Found key {}".format(key))
+                        key_map[key] = True
+
+            # filtered the map
+            key_map = {key:key_map[key]
+                for key in key_map if not key_map[key]}
+            if not key_map:
                 sys.exit(0)
-                break
+
             # connection.sendall(data)
             # logger.debug("Sent data")
     except:
@@ -27,14 +45,16 @@ def handle(connection, address, keyword):
         logger.debug("Closing socket")
         # connection.shutdown(socket.SHUT_RD)
         connection.close()
+        for key in key_map:
+            logger.debug("Failed to find {}".format(key))
 
 class Server(object):
-    def __init__(self, hostname, port, keyword):
+    def __init__(self, hostname, port, keywords):
         import logging
         self.logger = logging.getLogger("server")
         self.hostname = hostname
         self.port = port
-        self.keyword = keyword
+        self.keywords = keywords
 
     def start(self):
         self.logger.debug("listening")
@@ -46,7 +66,7 @@ class Server(object):
         conn, address = self.socket.accept()
         self.logger.debug("Got connection")
         process = multiprocessing.Process(
-            target=handle, args=(conn, address, self.keyword))
+            target=handle, args=(conn, address, self.keywords))
         process.daemon = True
         process.start()
         start_time = time.time()
@@ -62,12 +82,12 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.DEBUG)
     arg_len = len(sys.argv)
-    if arg_len == 2:
-        keyword = sys.argv[1]
-        server = Server("127.0.0.1", 4242, sys.argv[1])
-    else:
-        logging.debug("Usage: plugin_tester.py [keymetric].")
+    if arg_len != 2:
+        logging.debug("Usage: plugin_tester.py [keymetrics].")
         sys.exit(1)
+
+    keywords = sys.argv[1].split(' ')
+    server = Server("127.0.0.1", 4242, keywords)
 
     try:
         logging.info("Listening")

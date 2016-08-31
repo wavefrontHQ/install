@@ -11,7 +11,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "test.sh [ --src_url <one line installer script url> | --keymetric <keyword> ]"
+    echo "test.sh [ --src_url <one line installer script url> | --keymetric <keywords> ]"
     echo
     echo "    --src_url <url>"
     echo "          The token to register the agent. Must have agent management permissions"
@@ -65,8 +65,9 @@ fi
 
 # one line installer
 bash -c "$(curl -sL ${SRC_URL})" "--" "--test_app_configure"
-python plugin_tester.py ${KEYMETRIC}
+python plugin_tester.py "${KEYMETRIC}"
 
+# if plugin_tester return failure code,
 # grab the log from collectd to output failure
 if [ $? -ne 0 ]; then
     if [ -e "/var/log/collectd.log" ]; then

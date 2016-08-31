@@ -1,6 +1,6 @@
 ##############################################################
 # Dockerfile to build Redis Debian env
-# # Based on 
+# # Based on ubuntu:itest
 # ############################################################
 
 FROM ubuntu:itest

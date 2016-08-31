@@ -34,16 +34,17 @@ integration.
 **Below are scripts locate under  /docker\_dir/test\_script
 that are pulled into the testing environment to run**
 
-####test.sh [ --src\_url <url> | --keymetric <keyword> ]
+####test.sh [ --src\_url <url> | --keymetric <keywords> ]
 
 Script within the docker container that accepts
-one line installer script src url and a keymetric.
+one line installer script src url and keymetrics separated
+by space.
 
     description: 
         Runs the one line installer via sudo bash -c curl.
         call plugin_tester.py by passing keymetric.
 
-####plugin\_tester.py [keymetric]
+####plugin\_tester.py [keymetrics]
 
 Acts as proxy and listen to default opentsdb port (4242)
 

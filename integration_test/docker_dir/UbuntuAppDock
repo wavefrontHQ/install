@@ -1,0 +1,48 @@
+##############################################################
+# Dockerfile to build applications to test one line installer
+# in Debian system
+# Based on Ubuntu 14.04u
+# ############################################################
+
+#-------------------------------------------------------------
+# General Setting
+#-------------------------------------------------------------
+FROM ubuntu:itest
+WORKDIR /tmp
+ADD helpers/ubuntu_app/init.sh init.sh
+RUN chmod +x init.sh
+
+
+#-------------------------------------------------------------
+# Apache Setting
+#-------------------------------------------------------------
+RUN apt-get -y install apache2
+# extendedstatus is needed to enable detail metrics for server-status
+ADD helpers/apache/extendedstatus.conf /etc/apache2/conf-enabled
+RUN sed -i '/\<VirtualHost .*:[0-9]*\>/a \<Location \/server-status\>\n\  \
+	    SetHandler server-status\n\<\/Location\>\n' \
+	    /etc/apache2/sites-available/000-default.conf
+
+
+#-------------------------------------------------------------
+# Postgresql Setting
+#-------------------------------------------------------------
+RUN apt-get -y install postgresql
+
+# initialize the user and database for testing
+ADD helpers/postgresql/init.sql /tmp/init.sql
+
+
+#-------------------------------------------------------------
+# Redis Setting
+#-------------------------------------------------------------
+RUN apt-get update
+RUN apt-get -y install wget
+RUN apt-get -y install build-essential
+
+
+#-------------------------------------------------------------
+# Testing scripts
+#-------------------------------------------------------------
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh
