@@ -21,11 +21,11 @@ class CassandraConfigurator(inst.PluginInstaller):
         utils.cprint()
         utils.cprint(
             'Overview:\n'
-            'The Cassandra collectd plugin makes use of GenericJMX plugin\n'
-            'within the collectd java plugin to collect various\n'
+            'The Cassandra collectd plugin uses GenericJMX plugin\n'
+            'within the java plugin to collect various\n'
             'management information from the MBeanServer.\n'
             'We have set up some common collected metrics for Cassandra.\n'
-            'The only information needed from user is the access to the \n'
+            'The information needed from the user is the access to the \n'
             'MBeanServer.\n')
 
         _ = utils.cinput('Press Enter to continue')
@@ -194,9 +194,9 @@ class CassandraConfigurator(inst.PluginInstaller):
             '[RMI_REGISTRY_PORT]/jmxrmi\n')
 
 if __name__ == '__main__':
-    cassandra = CassandraInstaller(
-        'DEBIAN', 'java',
+    cassandra = CassandraConfigurator(
+        'DEBIAN', 'COLLECTD', 'java',
         'wavefront_cassandra.conf')
-    config.INSTALL_LOG = '/dev/null'
+    config.INSTALL_LOG = '/dev/stdout'
     cassandra.check_dependency()
     # cassandra.install()

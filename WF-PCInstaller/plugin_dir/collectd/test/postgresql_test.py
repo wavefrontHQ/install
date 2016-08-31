@@ -2,7 +2,6 @@
 postgresql 9.3 (Ubuntu 14.04)
 """
 import common.config as config
-import plugin_dir.plugin_installer as inst
 import plugin_dir.plugin_installer_test as t_inst
 import plugin_dir.collectd.postgresql as p_inst
 

@@ -24,6 +24,7 @@ plugin_dir/collectd/redis.py
 plugin_dir/collectd/zookeeper.py
 plugin_dir/collectd/test/__init__.py
 plugin_dir/collectd/test/apache_test.py
+plugin_dir/collectd/test/cassandra_test.py
 plugin_dir/collectd/test/postgresql_test.py
 plugin_dir/collectd/test/redis_test.py
 plugin_dir/telegraf/__init__.py
