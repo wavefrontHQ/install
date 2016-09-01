@@ -1,6 +1,6 @@
 #!/bin/bash
-service postgresql start
+service mysql start
 
 # initialize the database and link the database to
 # the test user docker
-su -c "cat /tmp/init.sql | psql -a" - postgres
+cat init.sql | mysql -u root --password=root

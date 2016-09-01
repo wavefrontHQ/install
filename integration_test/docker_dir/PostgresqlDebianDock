@@ -7,7 +7,7 @@ FROM ubuntu:itest
 
 RUN apt-get -y install postgresql
 
-WORKDIR ~/
+WORKDIR /tmp
 # initialize the user and database for testing
 ADD helpers/postgresql/init.sql /tmp/init.sql
 ADD helpers/postgresql/init.sh init.sh
