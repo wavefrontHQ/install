@@ -27,6 +27,7 @@ plugin_dir/collectd/test/__init__.py
 plugin_dir/collectd/test/apache_test.py
 plugin_dir/collectd/test/cassandra_test.py
 plugin_dir/collectd/test/mysql_test.py
+plugin_dir/collectd/test/nginx_test.py
 plugin_dir/collectd/test/postgresql_test.py
 plugin_dir/collectd/test/redis_test.py
 plugin_dir/telegraf/__init__.py
