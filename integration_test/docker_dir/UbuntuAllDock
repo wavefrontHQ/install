@@ -25,12 +25,27 @@ RUN sed -i '/\<VirtualHost .*:[0-9]*\>/a \<Location \/server-status\>\n\  \
 
 
 #-------------------------------------------------------------
+# MySQL Setting
+#-------------------------------------------------------------
+RUN echo 'mysql-server mysql-server/root_password password root' | \
+    debconf-set-selections
+RUN echo 'mysql-server mysql-server/root_password_again password root' | \
+    debconf-set-selections
+
+RUN apt-get -y install mysql-server
+RUN mysql_install_db
+
+# initialize 
+ADD helpers/mysql/init.sql /tmp/mysql/init.sql
+
+
+#-------------------------------------------------------------
 # Postgresql Setting
 #-------------------------------------------------------------
 RUN apt-get -y install postgresql
 
 # initialize the user and database for testing
-ADD helpers/postgresql/init.sql /tmp/init.sql
+ADD helpers/postgresql/init.sql /tmp/postgresql/init.sql
 
 
 #-------------------------------------------------------------

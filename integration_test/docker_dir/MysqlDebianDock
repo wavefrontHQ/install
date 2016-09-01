@@ -15,7 +15,7 @@ RUN mysql_install_db
 
 # initialize 
 WORKDIR /tmp
-ADD helpers/mysql/init.sql init.sql
+ADD helpers/mysql/init.sql mysql/init.sql
 ADD helpers/mysql/init.sh init.sh
 RUN chmod +x init.sh
 

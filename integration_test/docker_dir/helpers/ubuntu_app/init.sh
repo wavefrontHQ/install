@@ -7,13 +7,24 @@ service apache2 start
 
 
 #-------------------------------------------------------------
+# MySQL Init
+#-------------------------------------------------------------
+service mysql start
+
+# initialize the database and link the database to
+# the test user docker
+cat /tmp/mysql/init.sql | mysql -u root --password=root
+
+
+
+#-------------------------------------------------------------
 # Postgresql Init
 #-------------------------------------------------------------
 service postgresql start
 
 # initialize the database and link the database to
 # the test user docker
-su -c "cat /tmp/init.sql | psql -a" - postgres
+su -c "cat /tmp/postgresql/init.sql | psql -a" - postgres
 
 
 #-------------------------------------------------------------

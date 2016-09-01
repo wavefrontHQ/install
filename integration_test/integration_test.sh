@@ -94,6 +94,27 @@ function test_cassandra() {
 }
 
 
+function test_mysql() {
+    check_base
+
+    # build env
+    ${SUDO}docker build -t "mysql:test" -f docker_dir/MysqlDebianDock docker_dir/
+    # perform the test
+    ${SUDO}docker run -it --cap-add SETPCAP \
+            --cap-add SETUID --cap-add SETGID \
+            --cap-add DAC_READ_SEARCH \
+            "mysql:test" \
+            bash -c "./init.sh && ./test.sh --src_url ${SRC_URL} --keymetric mysql.docker_test"
+
+    if [ $? -ne 0 ]; then
+        echo "mysql failed"
+    else
+        echo "mysql succeeded"
+    fi
+}
+
+
+
 function test_debian() {
     check_base
 
@@ -101,7 +122,8 @@ function test_debian() {
     ${SUDO}docker build -t "app:test" -f docker_dir/UbuntuAllDock docker_dir/
 
     KEYMETRICS="apache.docker_test postgresql.docker_test \
-                redis_info.docker_test GenericJMX.cassandra"
+                redis_info.docker_test GenericJMX.cassandra \
+                mysql.docker_test"
     # perform the test
     ${SUDO}docker run -it --cap-add SETPCAP \
             --cap-add SETUID --cap-add SETGID \
@@ -123,6 +145,7 @@ function main() {
     # test_postgresql 
     # test_redis
     # test_cassandra
+    # test_mysql
     test_debian
 }
 
