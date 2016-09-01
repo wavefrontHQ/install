@@ -24,7 +24,7 @@ class NginxConfigurator(inst.PluginInstaller):
     def collect_data(self):
         """
         data = {
-            urls = [(list of server urls)]
+            url: url
         }
         """
         data = {}
@@ -61,7 +61,7 @@ class NginxConfigurator(inst.PluginInstaller):
         return True
 
 if __name__ == '__main__':
-    nginx = NginxInstaller(
+    nginx = NginxConfigurator(
         'DEBIAN', 'COLLECTD', 'nginx', 'wavefront_nginx.conf')
     config.INSTALL_LOG = '/dev/stdout'
     nginx.install()

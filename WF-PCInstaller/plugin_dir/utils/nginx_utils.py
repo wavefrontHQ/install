@@ -104,7 +104,7 @@ def plugin_usage():
       '  stub_status on;\n'
       '  access_log off;\n'
       '  allow 127.0.0.1;\n'
-      '  deny all;\n'
+      '  # deny all;\n'
       '}"\n'
       'must be included within a server block '
       'for the .conf file of your server.\n\n'
