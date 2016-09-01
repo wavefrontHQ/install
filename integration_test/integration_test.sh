@@ -73,13 +73,35 @@ function test_redis() {
     fi
 }
 
+
+function test_cassandra() {
+    check_base
+
+    # build env
+    ${SUDO}docker build -t "cassandra:test" -f docker_dir/CassandraDebianDock docker_dir/
+    # perform the test
+    ${SUDO}docker run -it --cap-add SETPCAP \
+            --cap-add SETUID --cap-add SETGID \
+            --cap-add DAC_READ_SEARCH \
+            "cassandra:test" \
+            bash -c "./init.sh && ./test.sh --src_url ${SRC_URL} --keymetric GenericJMX.cassandra"
+
+    if [ $? -ne 0 ]; then
+        echo "cassandra failed"
+    else
+        echo "cassandra succeeded"
+    fi
+}
+
+
 function test_debian() {
     check_base
 
     # build env
-    ${SUDO}docker build -t "app:test" -f docker_dir/UbuntuAppDock docker_dir/
+    ${SUDO}docker build -t "app:test" -f docker_dir/UbuntuAllDock docker_dir/
 
-    KEYMETRICS="apache.docker_test postgresql.docker_test redis_info.docker_test"
+    KEYMETRICS="apache.docker_test postgresql.docker_test \
+                redis_info.docker_test GenericJMX.cassandra"
     # perform the test
     ${SUDO}docker run -it --cap-add SETPCAP \
             --cap-add SETUID --cap-add SETGID \
@@ -100,6 +122,7 @@ function main() {
     # test_apache
     # test_postgresql 
     # test_redis
+    # test_cassandra
     test_debian
 }
 

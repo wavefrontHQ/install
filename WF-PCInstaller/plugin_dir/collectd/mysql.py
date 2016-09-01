@@ -233,5 +233,7 @@ class MySQLConfigurator(inst.PluginInstaller):
 
 
 if __name__ == '__main__':
-    sql = MySQLInstaller('DEBIAN', 'mysql', 'wavefront_mysql.conf')
+    sql = MySQLConfigurator(
+        'DEBIAN', 'COLLECTD', 'mysql', 'wavefront_mysql.conf')
+    config.INSTALL_LOG = '/dev/stdout'
     sql.install()

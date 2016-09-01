@@ -11,6 +11,7 @@ def handle(connection, address, keywords):
 
     # using dict to keep track of what has been seen
     # initialization
+    found = False
     key_map = {}
     for key in keywords:
         key_map[key] = False
@@ -35,12 +36,14 @@ def handle(connection, address, keywords):
             key_map = {key:key_map[key]
                 for key in key_map if not key_map[key]}
             if not key_map:
+                found = True
                 sys.exit(0)
 
             # connection.sendall(data)
             # logger.debug("Sent data")
     except:
-        logger.exception("Problem handling request")
+        if not found:
+            logger.exception("Problem handling request")
     finally:
         logger.debug("Closing socket")
         # connection.shutdown(socket.SHUT_RD)
