@@ -40,6 +40,17 @@ ADD helpers/mysql/init.sql /tmp/mysql/init.sql
 
 
 #-------------------------------------------------------------
+# Nginx Setting
+#-------------------------------------------------------------
+RUN apt-get -y install nginx
+
+# enable server-status
+RUN sed -i '/listen 80 default_server;/a location \/server-status{\n\
+    stub_status on;\n  access_log off;\n  allow 127.0.0.1;}\n' \
+    /etc/nginx/sites-available/default
+
+
+#-------------------------------------------------------------
 # Postgresql Setting
 #-------------------------------------------------------------
 RUN apt-get -y install postgresql

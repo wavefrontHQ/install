@@ -3,6 +3,7 @@ zookeeper 3.4.8 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import plugin_dir.plugin_installer as inst
+import plugin_dir.utils.plugin_utils as p_utils
 import common.config as config
 
 
@@ -34,7 +35,6 @@ class ZookeeperConfigurator(inst.PluginInstaller):
 
     def collect_data(self):
         """
-
         note: can only monitor one instance
         """
         data = {}
@@ -76,7 +76,7 @@ class ZookeeperConfigurator(inst.PluginInstaller):
         return True
 
 if __name__ == '__main__':
-    zk = ZookeeperInstaller(
-        'DEBIAN', 'zookeeper', 'wavefront_zookeeper.conf')
-    config.INSTALL_LOG = '/dev/null'
+    zk = ZookeeperConfigurator(
+        'DEBIAN', 'COLLECTD', 'zookeeper', 'wavefront_zookeeper.conf')
+    config.INSTALL_LOG = '/dev/stdout'
     zk.install()

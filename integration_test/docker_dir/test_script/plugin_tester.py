@@ -50,6 +50,8 @@ def handle(connection, address, keywords):
         connection.close()
         for key in key_map:
             logger.debug("Failed to find {}".format(key))
+        sys.exit(1)
+
 
 class Server(object):
     def __init__(self, hostname, port, keywords):
@@ -76,9 +78,9 @@ class Server(object):
         self.logger.debug("Started process %r", process)
         while process.is_alive():
             end_time = time.time()
-            if end_time - start_time > 35:
+            if end_time - start_time > 65:
                 process.terminate()
-                sys.exit(1)
+                process.join()
                 break
 
 if __name__ == "__main__":

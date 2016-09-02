@@ -9,7 +9,7 @@ FROM ubuntu:itest
 RUN apt-get -y install software-properties-common python-software-properties
 
 # prepare to install java
-RUN add-apt-repository ppa:webupd8team/java
+RUN add-apt-repository -y ppa:webupd8team/java
 
 # obtain cassandra from apache website by creating a repo
 RUN echo "deb http://www.apache.org/dist/cassandra/debian \

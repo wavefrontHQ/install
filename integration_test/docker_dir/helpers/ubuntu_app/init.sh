@@ -16,6 +16,11 @@ service mysql start
 cat /tmp/mysql/init.sql | mysql -u root --password=root
 
 
+#-------------------------------------------------------------
+# Nginx Init
+#-------------------------------------------------------------
+service nginx start
+
 
 #-------------------------------------------------------------
 # Postgresql Init
