@@ -16,7 +16,7 @@ class NginxConfiguratorTest(
         }
         """
         data = {
-            'url': 'http://localhost/server-status'
+            'url': 'http://localhost:81/server-status'
         }
 
         return data
