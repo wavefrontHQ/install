@@ -7,7 +7,11 @@ import random
 import socket
 import string
 import re
-import urlparse as url_p
+try:
+    from urllib.parse import urlparse as url_p
+except ImportError:
+    from urlparse import urlparse as url_p
+
 
 # colors for the print
 BLACK = 0

@@ -12,6 +12,26 @@ WORKDIR /tmp
 ADD helpers/ubuntu_app/init.sh init.sh
 RUN chmod +x init.sh
 
+### Java installation ###
+# to run add-apt-repository
+RUN apt-get -y install software-properties-common python-software-properties
+
+# prepare to install java
+RUN add-apt-repository ppa:webupd8team/java
+
+# update for java
+RUN apt-get update
+
+# http://askubuntu.com/questions/190582/installing-java-automatically-with-silent-option
+# skip oracle agreement
+RUN echo debconf shared/accepted-oracle-license-v1-1 select true | \
+	debconf-set-selections
+RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | \
+	debconf-set-selections
+
+# install java
+RUN apt-get -y install oracle-java8-set-default
+
 
 #-------------------------------------------------------------
 # Apache Setting
@@ -49,6 +69,14 @@ RUN sed -i '/listen 80 default_server;/a location \/server-status{\n\
     stub_status on;\n  access_log off;\n  allow 127.0.0.1;}\n' \
     /etc/nginx/sites-available/default
 
+# change the port to 81 to prevent conflict with apache
+RUN sed -i 's/listen 80 default_server;/listen 81 default_server;/' \
+    /etc/nginx/sites-available/default
+
+RUN sed -i \
+    's/listen \[::\]:80 default/listen \[::\]:81 default/' \
+    /etc/nginx/sites-available/default
+
 
 #-------------------------------------------------------------
 # Postgresql Setting
@@ -70,12 +98,6 @@ RUN apt-get -y install build-essential
 #-------------------------------------------------------------
 # Cassandra Setting
 #-------------------------------------------------------------
-# to run add-apt-repository
-RUN apt-get -y install software-properties-common python-software-properties
-
-# prepare to install java
-RUN add-apt-repository ppa:webupd8team/java
-
 # obtain cassandra from apache website by creating a repo
 RUN echo "deb http://www.apache.org/dist/cassandra/debian \
           37x main" | sudo tee -a \
@@ -85,18 +107,8 @@ RUN echo "deb http://www.apache.org/dist/cassandra/debian \
 RUN gpg --keyserver pgp.mit.edu --recv-keys 749D6EEC0353B12C
 RUN gpg --export --armor 749D6EEC0353B12C | sudo apt-key add -
 
-# update for java and cassandra
+# update cassandra repo
 RUN apt-get update
-
-# http://askubuntu.com/questions/190582/installing-java-automatically-with-silent-option
-# skip oracle agreement
-RUN echo debconf shared/accepted-oracle-license-v1-1 select true | \
-	debconf-set-selections
-RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | \
-	debconf-set-selections
-
-# install java
-RUN apt-get -y install oracle-java8-set-default
 
 # install cassandra
 RUN apt-get -y install cassandra
@@ -105,6 +117,19 @@ RUN apt-get -y install cassandra
 RUN echo "/usr/lib/jvm/java-8-oracle/jre/lib/amd64/server/" | \
 	tee /etc/ld.so.conf.d/java.conf
 RUN ldconfig
+
+
+#-------------------------------------------------------------
+# Memcached Setting
+#-------------------------------------------------------------
+RUN apt-get -y install build-essential
+RUN apt-get -y install libevent-dev
+
+
+#-------------------------------------------------------------
+# Zookeeper Setting
+#-------------------------------------------------------------
+# see init file
 
 
 #-------------------------------------------------------------

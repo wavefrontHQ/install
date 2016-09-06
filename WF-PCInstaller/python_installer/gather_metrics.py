@@ -3,7 +3,7 @@
 The main module file that will be invoked by the one line installer.
 
 Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
-(COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST
+(COLLECTD|TELEGRAF)] [APP_DIR] [log file] [-TEST]
 
 operating system: 
     Determines the installer control flow.
@@ -45,18 +45,18 @@ INSTALLED = 0
 def usage():
     utils.cprint(
         "Usage: gather_metrics [operating system(DEBIAN|REDHAT)] "
-        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST\n"
-        "operating system:" 
-        "    Determines the installer control flow."
-        "agent:" 
-        "    Determines the directory path."
-        "app_dir:" 
-        "    The location of WF-PCInstaller."
-        "log file:" 
-        "    Errors will log to this file."
-        "-TEST:" 
-        "    Installs all detected applications with default setting." 
-        "    This is for integeration test.  Default is off.")
+        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] [-TEST]\n"
+        "operating system:\n" 
+        "    Determines the installer control flow.\n"
+        "agent:\n" 
+        "    Determines the directory path.\n"
+        "app_dir:\n" 
+        "    The location of WF-PCInstaller where setup.py resides.\n"
+        "log file:\n" 
+        "    Errors will log to this file.\n"
+        "-TEST:\n" 
+        "    Installs all detected applications with default setting.\n" 
+        "    This is for integeration test.  Default is off.\n")
 
 
 def check_version():
@@ -507,8 +507,6 @@ def check_option(option, max_length):
 
 def main():
     check_version()
-    conf.check_collectd_exists()
-    conf.check_collectd_path()
 
     # TODO: change the cmd args to switch statement
     # so order doesnt matter
@@ -522,6 +520,10 @@ def main():
         utils.eprint('Invalid arguments.')
         usage()
         sys.exit(1)
+
+    if config.AGENT == config.COLLECTD:
+        conf.check_collectd_exists()
+        conf.check_collectd_path()
 
     # if sixth arg exists
     if arg_len == 6:

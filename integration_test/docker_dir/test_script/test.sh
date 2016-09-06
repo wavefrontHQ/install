@@ -72,8 +72,8 @@ python plugin_tester.py "${KEYMETRIC}"
 if [ $? -ne 0 ]; then
     if [ -e "/var/log/collectd.log" ]; then
         cat /var/log/collectd.log
-        exit 1
     else
         echo -e "\nTest has failed, but no log message can be found."
     fi
+    exit 1
 fi

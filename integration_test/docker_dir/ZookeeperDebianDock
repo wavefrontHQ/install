@@ -1,0 +1,38 @@
+##############################################################
+# Dockerfile to build Zookeeper env in Debian system
+# Based on Ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+WORKDIR /tmp
+
+# to run add-apt-repository
+RUN apt-get -y install software-properties-common python-software-properties
+
+# prepare to install java
+RUN add-apt-repository -y ppa:webupd8team/java
+
+# get java
+RUN apt-get update
+
+# http://askubuntu.com/questions/190582/installing-java-automatically-with-silent-option
+# skip oracle agreement
+RUN echo debconf shared/accepted-oracle-license-v1-1 select true | \
+	debconf-set-selections
+RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | \
+	debconf-set-selections
+
+# install java
+RUN apt-get -y install oracle-java8-set-default
+
+# for zookeeper
+RUN apt-get -y install libevent-dev
+
+
+# initialize 
+ADD helpers/zookeeper/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

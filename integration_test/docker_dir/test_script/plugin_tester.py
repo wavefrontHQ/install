@@ -3,19 +3,12 @@ import socket
 import sys
 import time
 
-def handle(connection, address, keywords):
+def handle(connection, address, key_list):
     import logging
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger("process-%r" % (address,))
-    start_time = time.time()
 
-    # using dict to keep track of what has been seen
-    # initialization
     found = False
-    key_map = {}
-    for key in keywords:
-        key_map[key] = False
-
     try:
         logger.debug("Connected %r at %r", connection, address)
         while True:
@@ -24,33 +17,28 @@ def handle(connection, address, keywords):
                 logger.debug("Socket closed remotely")
                 break
             logger.debug("Received data %r", data)
-            # if key that has not been found is found in the data,
-            # change the mapping of that key to true
-            for key in key_map:
-                if not key_map[key]:
-                    if key in data:
-                        logger.debug("Found key {}".format(key))
-                        key_map[key] = True
+            # if key in list is found, then remove that key
+            for key in key_list:
+                if key in data:
+                    logger.debug("Found key {}".format(key))
+                    key_list.remove(key)
 
-            # filtered the map
-            key_map = {key:key_map[key]
-                for key in key_map if not key_map[key]}
-            if not key_map:
+            # an empty list denotes all keywords are found
+            if len(key_list) == 0:
                 found = True
                 sys.exit(0)
 
             # connection.sendall(data)
             # logger.debug("Sent data")
     except:
+        # sys.exit is an exception.  Successful exit
+        # should not have exception message.
         if not found:
             logger.exception("Problem handling request")
     finally:
         logger.debug("Closing socket")
-        # connection.shutdown(socket.SHUT_RD)
+        connection.shutdown(socket.SHUT_RD)
         connection.close()
-        for key in key_map:
-            logger.debug("Failed to find {}".format(key))
-        sys.exit(1)
 
 
 class Server(object):
@@ -70,18 +58,33 @@ class Server(object):
         self.socket.settimeout(60)
         conn, address = self.socket.accept()
         self.logger.debug("Got connection")
+
+        # initialize a list for keeping track of keyword not found
+        # using Manager, which allow an object to be shared
+        # between processes.  It is slower than using shared memory.
+        manager = multiprocessing.Manager()
+        key_list = manager.list(self.keywords)
+
         process = multiprocessing.Process(
-            target=handle, args=(conn, address, self.keywords))
+            target=handle, args=(conn, address, key_list))
         process.daemon = True
         process.start()
-        start_time = time.time()
+        start_time = time.time()  # keep track of time passed
         self.logger.debug("Started process %r", process)
+
         while process.is_alive():
             end_time = time.time()
+            # exceed two cycles of collectd agent report
             if end_time - start_time > 65:
+                self.logger.debug("Closing socket by server object")
+                conn.shutdown(socket.SHUT_RD)
+                conn.close()
                 process.terminate()
                 process.join()
-                break
+
+                for key in key_list:
+                    self.logger.debug("Failed to find {}".format(key))
+                sys.exit(1)
 
 if __name__ == "__main__":
     import logging

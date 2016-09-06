@@ -1,5 +1,5 @@
 ##############################################################
-# Dockerfile to build Redis Debian env
+# Dockerfile to build Memcached Debian env
 # # Based on ubuntu:itest
 # ############################################################
 
@@ -7,10 +7,11 @@ FROM ubuntu:itest
 
 RUN apt-get update
 RUN apt-get -y install build-essential
+RUN apt-get -y install libevent-dev
 
 WORKDIR /tmp
 # initialize the user and database for testing
-ADD helpers/redis/init.sh init.sh
+ADD helpers/memcached/init.sh init.sh
 RUN chmod +x init.sh
 
 ADD test_script/plugin_tester.py plugin_tester.py

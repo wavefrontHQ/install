@@ -7,6 +7,23 @@ service apache2 start
 
 
 #-------------------------------------------------------------
+# Cassandra Init
+#-------------------------------------------------------------
+service cassandra start
+
+
+#-------------------------------------------------------------
+# Memcached Init
+#-------------------------------------------------------------
+wget https://memcached.org/files/memcached-1.4.31.tar.gz
+tar -zxf memcached-1.4.31.tar.gz
+cd memcached-1.4.31
+./configure && make && sudo make install
+memcached -u root -d
+cd ..
+
+
+#-------------------------------------------------------------
 # MySQL Init
 #-------------------------------------------------------------
 service mysql start
@@ -45,6 +62,17 @@ cd ..
 
 
 #-------------------------------------------------------------
-# Cassandra Init
+# Zookeeper Init
 #-------------------------------------------------------------
-service cassandra start
+# install zookeeper
+wget http://mirrors.sonic.net/apache/zookeeper/zookeeper-3.4.8/zookeeper-3.4.8.tar.gz
+tar -xzf zookeeper-3.4.8.tar.gz
+cd zookeeper-3.4.8
+echo "tickTime=2000" | sudo tee -a \
+       conf/zoo.cfg
+echo "dataDir=/var/zookeeper" | sudo tee -a \
+       conf/zoo.cfg
+echo "clientPort=2181" | sudo tee -a \
+       conf/zoo.cfg
+./bin/zkServer.sh start &
+cd ..
