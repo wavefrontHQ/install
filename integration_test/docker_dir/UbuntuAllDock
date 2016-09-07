@@ -94,6 +94,12 @@ RUN apt-get update
 RUN apt-get -y install wget
 RUN apt-get -y install build-essential
 
+# instructions from redis.io/download
+RUN wget http://download.redis.io/releases/redis-3.2.3.tar.gz
+RUN tar xzf redis-3.2.3.tar.gz
+WORKDIR /tmp/redis-3.2.3
+RUN make
+WORKDIR /tmp
 
 #-------------------------------------------------------------
 # Cassandra Setting
@@ -125,11 +131,30 @@ RUN ldconfig
 RUN apt-get -y install build-essential
 RUN apt-get -y install libevent-dev
 
+RUN wget https://memcached.org/files/memcached-1.4.31.tar.gz
+RUN tar -zxf memcached-1.4.31.tar.gz
+WORKDIR /tmp/memcached-1.4.31
+RUN ./configure && make && sudo make install
+
+WORKDIR /tmp
 
 #-------------------------------------------------------------
 # Zookeeper Setting
 #-------------------------------------------------------------
-# see init file
+# install zookeeper
+RUN wget http://mirrors.sonic.net/apache/zookeeper/zookeeper-3.4.8/zookeeper-3.4.8.tar.gz
+RUN tar -xzf zookeeper-3.4.8.tar.gz
+
+WORKDIR /tmp/zookeeper-3.4.8
+# set up configuration
+RUN echo "tickTime=2000" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "dataDir=/var/zookeeper" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "clientPort=2181" | sudo tee -a \
+       conf/zoo.cfg
+
+WORKDIR /tmp
 
 
 #-------------------------------------------------------------

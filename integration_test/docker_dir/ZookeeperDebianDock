@@ -29,6 +29,20 @@ RUN apt-get -y install oracle-java8-set-default
 # for zookeeper
 RUN apt-get -y install libevent-dev
 
+# install zookeeper
+RUN wget http://mirrors.sonic.net/apache/zookeeper/zookeeper-3.4.8/zookeeper-3.4.8.tar.gz
+RUN tar -xzf zookeeper-3.4.8.tar.gz
+WORKDIR /tmp/zookeeper-3.4.8
+
+# set up configuration
+RUN echo "tickTime=2000" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "dataDir=/var/zookeeper" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "clientPort=2181" | sudo tee -a \
+       conf/zoo.cfg
+
+WORKDIR /tmp
 
 # initialize 
 ADD helpers/zookeeper/init.sh init.sh
