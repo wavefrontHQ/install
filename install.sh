@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config"
+    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --no_overwrite_collectd_config"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -32,8 +32,8 @@ function usage() {
     echo "          The address of the proxy to send data to."
     echo "    --proxy_port <port>"
     echo "          The proxy port to send collectd data to."
-    echo "    --overwrite_collectd_config"
-    echo "          Overwrite existing collectd configurations in /etc/collectd/"
+    echo "    --no_overwrite_collectd_config"
+    echo "          Do not overwrite existing collectd configurations in /etc/collectd/"
     echo
 }
 
@@ -88,8 +88,8 @@ do
             PROXY_PORT=$2
             shift 2
             ;;
-        --overwrite_collectd_config)
-            OVERWRITE_COLLECTD_CONFIG="yes"
+        --no_overwrite_collectd_config)
+            OVERWRITE_COLLECTD_CONFIG="no"
             shift
             ;;
         --log)
@@ -777,16 +777,7 @@ EOF
     esac
 
     if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
-        echo
-        echo "We recommend using Wavefront's collectd configuration for initial setup"
-        if ask "Would you like to overwrite any existing collectd configuration? " N; then
-            OVERWRITE_COLLECTD_CONFIG="yes"
-        else
-            echo
-            echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
-            echo "Manual setup is required"
-            echo
-        fi
+        OVERWRITE_COLLECTD_CONFIG="yes"
     fi
 
     if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
