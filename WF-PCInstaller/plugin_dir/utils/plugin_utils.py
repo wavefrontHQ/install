@@ -1,7 +1,7 @@
 """
 - contains common functions from plugins that can be
 factored out.
-- contains prompts and error messages.
+- unlike install_utils, this file contains prompts and error messages.
 """
 import common.install_utils as utils
 import json
@@ -36,7 +36,7 @@ def check_url(url, url_list=[]):
 
     if not check_http_response(url):
         return False
-    
+
     return True
 
 
@@ -76,8 +76,8 @@ def check_http_response(url):
         ret_val = True
 
     return ret_val
-    
-    
+
+
 def get_server_status_list(check_server_status_url):
     """
     get a list of server-status urls

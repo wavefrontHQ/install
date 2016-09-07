@@ -145,19 +145,19 @@ class MySQLConfigurator(inst.PluginInstaller):
             res = utils.ask('Is the above information correct?')
 
             if res:
-                  utils.print_step('Saving instance')
-                  db_list.append(db)
-                  data[db] = {
-                      "username": username,
-                      "password": password,
-                      "host": host,
-                  }
-                  if remote:
-                      data[db]['port'] = port
-                      server_list.append((host, port))
-                  else:
-                      data[db]['socket'] = socket
-                  utils.print_success()
+                utils.print_step('Saving instance')
+                db_list.append(db)
+                data[db] = {
+                    "username": username,
+                    "password": password,
+                    "host": host,
+                }
+                if remote:
+                    data[db]['port'] = port
+                    server_list.append((host, port))
+                else:
+                    data[db]['socket'] = socket
+                utils.print_success()
             else:
                 utils.cprint('This instance will not be saved.')
 

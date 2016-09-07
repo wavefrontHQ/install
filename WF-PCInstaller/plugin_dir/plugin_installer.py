@@ -1,3 +1,6 @@
+"""
+The main interface for the configuration installer
+"""
 import common.install_utils as utils
 import common.config as config
 import plugin_dir.plugin_exception as ex
@@ -93,7 +96,7 @@ class PluginInstaller(object):
             A truthy value that indicates a successful write
             ex: 1, True
 
-        Description: 
+        Description:
             This method writes the proper configuration setting
             to the file out is pointing.
         """
@@ -134,8 +137,8 @@ class PluginInstaller(object):
 
         plugin_mod = self.plugin_name + '.so'
         if utils.check_path_exists(
-            '{}/{}'.format(self.plugin_dir, plugin_mod)):
-                utils.print_success()
+                '{}/{}'.format(self.plugin_dir, plugin_mod)):
+            utils.print_success()
         else:
             self.raise_error('Missing {} plugin for collectd'.format(
                 self.plugin_name))

@@ -7,13 +7,14 @@ import random
 import socket
 import string
 import re
+# python 2/3 compatibility
 try:
     from urllib.parse import urlparse as url_p
 except ImportError:
     from urlparse import urlparse as url_p
 
 
-# colors for the print
+# colors for the print message
 BLACK = 0
 RED = 1
 GREEN = 2
@@ -31,10 +32,16 @@ INVALID_URL = -1
 
 # input/output utils
 def cprint(*args, **kwargs):
+    """
+    future print method for compatibility between python 2/3
+    """
     print(*args, **kwargs)
 
 
 def eprint(*args, **kwargs):
+    """
+    error print method for compatibility between python 2/3
+    """
     print(*args, file=sys.stderr, **kwargs)
 
 
@@ -251,7 +258,7 @@ def append_to_log(msg, log):
         'echo -e "\n{msg}" >> {log}'.format(
             msg=msg, log=log))
     if res != 0:
-        exit_with_message('Failed to write to log.')
+        raise Exception('Failed to write to log.')
 
 
 # utils using os
@@ -339,16 +346,27 @@ def check_url_scheme(url):
 
 
 def random_string(length):
+    """
+    generate a random string with length length
+    """
     pool = string.ascii_letters + string.digits
     return ''.join(random.choice(pool) for i in range(length))
 
 
-def check_valid_port(string):
-    if string is None:
+def check_valid_port(port):
+    """
+    Input:
+        port: string representation of port number
+
+    Output:
+        True if port is valid
+        False otherwise
+    """
+    if port is None:
         return False
 
     try:
-        num = int(string)
+        num = int(port)
     except ValueError:
         return False
 
@@ -359,6 +377,14 @@ def check_valid_port(string):
 
 
 def hostname_resolves(hostname):
+    """
+    Input:
+        hostname string:
+            hostname of a server
+    Output:
+        True if host is resolvable
+        False otherwise
+    """
     try:
         socket.gethostbyname(hostname)
         return True
@@ -384,6 +410,7 @@ def is_valid_ipv4_address(address):
         return False
 
     return True
+
 
 if __name__ == '__main__':
     print_warn('This is for testing install_utils.py')

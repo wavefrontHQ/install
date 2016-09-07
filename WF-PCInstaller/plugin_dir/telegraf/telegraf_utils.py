@@ -7,8 +7,12 @@ import common.config as config
 def get_sample_config(name):
     """
     using telegraf command to generate the plugin config
-    
-    returns the output of the following command
+
+    Input:
+        name string:
+            the name of plugin
+    Output:
+        returns the output of the following command
         telegraf -usage name
     """
     command = (

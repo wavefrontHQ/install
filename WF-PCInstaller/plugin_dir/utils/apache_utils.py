@@ -61,7 +61,7 @@ def check_dependency(os):
             utils.print_success()
         else:
             utils.print_success()
-            
+
     elif os == config.REDHAT:
         utils.cprint()
         utils.cprint(

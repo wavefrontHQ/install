@@ -1,6 +1,8 @@
 """
 To make other test class cleaner
 """
+
+
 class PluginInstallerTest(object):
     def title(self):
         pass
@@ -9,4 +11,4 @@ class PluginInstallerTest(object):
         pass
 
     def check_dependency(self):
-        pass 
+        pass

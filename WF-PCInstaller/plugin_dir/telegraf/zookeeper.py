@@ -34,7 +34,6 @@ class ZookeeperConfigurator(inst.PluginInstaller):
     def check_dependency(self):
         pass
 
-
     def collect_data(self):
         """
         data = {
@@ -88,7 +87,7 @@ class ZookeeperConfigurator(inst.PluginInstaller):
                 'Cannot obtain sample config with telegraf command')
 
         server_list_str = p_utils.json_dumps(server_list)
-          
+
         res = tf_utils.edit_conf(
             conf, 'servers', server_list_str)
 

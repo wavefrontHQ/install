@@ -7,6 +7,7 @@ import plugin_dir.plugin_installer as inst
 import plugin_dir.utils.plugin_utils as p_utils
 import plugin_dir.telegraf.telegraf_utils as tf_utils
 
+
 class MySQLConfigurator(inst.PluginInstaller):
     def title(self):
         utils.cprint(
@@ -48,7 +49,7 @@ class MySQLConfigurator(inst.PluginInstaller):
             "servers": [(list of dsn)]
         }
         """
-        data = {'servers':[]}
+        data = {'servers': []}
         db_list = []
 
         while utils.ask('\nWould you like to add a mysql server to monitor?'):
@@ -68,7 +69,7 @@ class MySQLConfigurator(inst.PluginInstaller):
                     'A valid port is a number '
                     'between (0, 65535) inclusive.'),
                 default="3306")
-            
+
             if (host, port) in db_list:
                 utils.cprint(
                     'You have already recorded\n'
@@ -100,15 +101,15 @@ class MySQLConfigurator(inst.PluginInstaller):
             res = utils.ask('Is the above information correct?')
 
             if res:
-                  utils.print_step('Saving instance')
-                  db_list.append((host, port))
-                  server = (
-                      '{username}:{password}@tcp({host}:{port})').format(
-                        username=username,
-                        password=password,
-                        host=host, port=port)
-                  data['servers'].append(server)
-                  utils.print_success()
+                utils.print_step('Saving instance')
+                db_list.append((host, port))
+                server = (
+                    '{username}:{password}@tcp({host}:{port})').format(
+                      username=username,
+                      password=password,
+                      host=host, port=port)
+                data['servers'].append(server)
+                utils.print_success()
             else:
                 utils.cprint('This instance will not be saved.')
 
