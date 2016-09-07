@@ -886,7 +886,7 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/457999/WF-PCInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/458086/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
@@ -902,9 +902,14 @@ EOF
             APP_DIR="/tmp/$APP_CONFIGURE_NAME"
             cd $APP_DIR
             if [ "$TEST_APP_CONFIGURE" == "yes" ]; then
-                python -m python_installer.gather_metrics ${OPERATING_SYSTEM} COLLECTD ${APP_DIR} ${INSTALL_LOG} "-TEST"
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} \
+                --log_file ${INSTALL_LOG} "--TEST"
             else
-                python -m python_installer.gather_metrics ${OPERATING_SYSTEM} COLLECTD ${APP_DIR} ${INSTALL_LOG}
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} --log_file ${INSTALL_LOG}
             fi
             if [ "$?" == 0 ]; then
                 APP_FINISHED="yes"
