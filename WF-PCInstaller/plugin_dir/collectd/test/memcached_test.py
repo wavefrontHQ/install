@@ -30,6 +30,6 @@ class MemcachedConfiguratorTest(
 
 if __name__ == '__main__':
     mc = MemcachedInstaller(
-        'DEBIAN', 'memcached', 'wavefront_memcached.conf')
+        'DEBIAN', 'COLLECTD', 'memcached', 'wavefront_memcached.conf')
     config.INSTALL_LOG = '/dev/stdout'
     mc.install()
