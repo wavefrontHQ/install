@@ -23,13 +23,21 @@ Run the script to begin testing
 The script to be called when testing one line installer
 integration.
 
-    description:
+    Description:
         Builds the base docker image.
         For each application that the installer is testing against,
         build the appropriate environment using the
         Dockfile located under /docker_dir and runs
         the container with by providing the appropriate
         parameters.
+
+    Note:
+        init.sh files are often invoked in docker run command.
+        They are needed because docker 1.12 cannot start the
+        service within Dockerfiles.  An external script
+        needs to be invoked to start the service after starting
+        the container.
+
     
 **Below are scripts locate under  /docker\_dir/test\_script
 that are pulled into the testing environment to run**
@@ -40,7 +48,7 @@ Script within the docker container that accepts
 one line installer script src url and keymetrics separated
 by space.
 
-    description: 
+    Description: 
         Runs the one line installer via sudo bash -c curl.
         call plugin_tester.py by passing keymetric.
 
@@ -48,6 +56,6 @@ by space.
 
 Acts as proxy and listen to default opentsdb port (4242)
 
-    description:
+    Description:
         Listen to the socket at 4242 and check whether
-        keymetric is reported by collecting agent (TELEGRAF|COLLECTD).
+        keymetrics are reported by the collecting agent (TELEGRAF|COLLECTD).

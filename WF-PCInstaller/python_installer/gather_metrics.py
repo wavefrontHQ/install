@@ -301,7 +301,7 @@ def installer_menu(app_list, support_dict):
         for i, app in enumerate(app_list):
             # formatted string for menu
             index = '({i})'.format(i=i)
-            app_installer = '{app} configurator'.format(app=app)
+            app_installer = '{app}'.format(app=app)
             app_state = install_state[app]['state']
 
             if 'date' in install_state[app]:
@@ -328,8 +328,8 @@ def installer_menu(app_list, support_dict):
 
         utils.cprint()
         utils.cprint(
-            'To pick a installer, type in the corresponding number '
-            'next to the installer.\n'
+            'To pick a configurator, type in the corresponding number '
+            'next to the configurator.\n'
             'To quit out of this installer, type "[Q]uit" or "exit".')
         res = utils.get_input(
             'Which installer would you like to run?').lower()
@@ -346,12 +346,12 @@ def installer_menu(app_list, support_dict):
                 app_state = install_state[app]['state']
                 if app_state == INSTALLED:
                     utils.print_warn(
-                        'You have previously used this installer\n'
+                        'You have previously used this configurator\n'
                         'Reinstalling will overwrite the old configuration '
                         'file, {}.'.format(app_dict['conf_name']))
                 confirm = utils.ask(
                     'Would you like to proceed with '
-                    'the installer?')
+                    'the configurator?')
                 if confirm:
                     if run_installer(config.AGENT, app_dict):
                         install_state[app]['state'] = INSTALLED
@@ -380,7 +380,6 @@ def run_installer(agent, app_dict, TEST=False):
         TEST bool:
             used for integration testing
     Output:
-
     """
     # pick directory based on agent
     if agent == config.COLLECTD:

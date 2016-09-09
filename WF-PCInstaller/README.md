@@ -4,7 +4,7 @@
 ```
 python -m python_installer.gather_metrics \
 [operating system(DEBIAN|REDHAT)] \
-[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] [-TEST]
+[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] [-TEST] [--debug]
 ```
     operating system:
         Determines the installer control flow.
@@ -17,6 +17,8 @@ python -m python_installer.gather_metrics \
     --TEST:
         Installs all detected applications with default setting.
         This is for integeration test.  Default is off.
+    --debug:
+        Turns the debug variable on.  Output more message.
 
 ##Package map:
 
@@ -25,23 +27,32 @@ The structure of this directory
     common/
         contains common installation utilities (install_utils.py) 
         and global variables (common.py).
+
     plugin_conf/
         base configuration files used for some collectd plugins.
+
     plugin_extension/
         extension files made using collectd plugin.
+
     python_installer/
         main script (gather_metrics.py) resides here.
+
     python_dir/
         contains interface for configurator class (plugin_installer.py).
         configurator classes reside here. 
+
     collectd/
         contains collectd configurators.
+
     telegraf/
         contains telegraf configurators.
+
     utils/
         common utils shared among telegraf and collectd.
+
     setup.py
         can be used to package the PCI via the sdist option.
+
     MANIFEST.in
         specify what files to include in the tar
 

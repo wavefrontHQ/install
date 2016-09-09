@@ -1,3 +1,6 @@
+"""
+Common functions for Nginx found between collectd and telegraf configurators
+"""
 import re
 
 import common.install_utils as utils
