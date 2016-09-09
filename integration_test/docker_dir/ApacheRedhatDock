@@ -1,0 +1,19 @@
+##############################################################
+# Dockerfile to build Apache env in Debian system
+# # Based on centos:itest
+# ############################################################
+
+FROM centos:itest
+
+WORKDIR /tmp
+
+# install apache
+RUN yum -y install httpd
+
+# extendedstatus is needed to enable detail metrics for server-status
+ADD helpers/apache/extendedstatus.conf /etc/httpd/conf.d
+RUN echo -e "\n<Location /server-status>\n \
+  SetHandler server-status\n</Location>" | tee -a /etc/httpd/conf/httpd.conf
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

@@ -12,9 +12,19 @@ fi
 
 
 # check if base image is built
-function check_base() {
+function check_debian_base() {
+  # debian system
   if [ "$(${SUDO}docker images -q ubuntu:itest 2> /dev/null)" == "" ]; then
-      echo "Please build base images first"
+      echo "Please build base ubuntu images first"
+      exit 1
+  fi
+}
+
+
+function check_redhat_base() {
+  # redhat system
+  if [ "$(${SUDO}docker images -q centos:itest 2> /dev/null)" == "" ]; then
+      echo "Please build base centos images first"
       exit 1
   fi
 }
@@ -23,8 +33,8 @@ function check_base() {
 #-------------------------------------------------------------
 # Apache Test
 #-------------------------------------------------------------
-function test_apache() {
-    check_base
+function test_apache_debian() {
+    check_debian_base
 
     # apache test
     # build apache env
@@ -44,11 +54,32 @@ function test_apache() {
 }
 
 
+function test_apache_redhat() {
+    check_redhat_base
+
+    # apache test
+    # build apache env
+    ${SUDO}docker build -t "apache:rtest" -f docker_dir/ApacheRedhatDock docker_dir/
+    # perform the test
+    ${SUDO}docker run -it --cap-add SETPCAP \
+            --cap-add SETUID --cap-add SETGID \
+            --cap-add DAC_READ_SEARCH \
+            "apache:rtest" \
+            bash -c "service httpd start && ./test.sh --src_url ${SRC_URL} --keymetric apache.docker_test"
+
+    if [ $? -ne 0 ]; then
+        echo "Apache failed"
+    else
+        echo "Apache succeeded"
+    fi
+}
+
+
 #-------------------------------------------------------------
 # Cassandra Test
 #-------------------------------------------------------------
-function test_cassandra() {
-    check_base
+function test_cassandra_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "cassandra:test" -f docker_dir/CassandraDebianDock docker_dir/
@@ -70,8 +101,8 @@ function test_cassandra() {
 #-------------------------------------------------------------
 # memcached Test
 #-------------------------------------------------------------
-function test_memcached() {
-    check_base
+function test_memcached_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "memcached:test" -f docker_dir/MemcachedDebianDock docker_dir/
@@ -93,8 +124,8 @@ function test_memcached() {
 #-------------------------------------------------------------
 # MySQL Test
 #-------------------------------------------------------------
-function test_mysql() {
-    check_base
+function test_mysql_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "mysql:test" -f docker_dir/MysqlDebianDock docker_dir/
@@ -116,8 +147,8 @@ function test_mysql() {
 #-------------------------------------------------------------
 # Nginx Test
 #-------------------------------------------------------------
-function test_nginx() {
-    check_base
+function test_nginx_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "nginx:test" -f docker_dir/NginxDebianDock docker_dir/
@@ -139,8 +170,8 @@ function test_nginx() {
 #-------------------------------------------------------------
 # Postgresql Test
 #-------------------------------------------------------------
-function test_postgresql() {
-    check_base
+function test_postgresql_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "postgres:test" -f docker_dir/PostgresqlDebianDock docker_dir/
@@ -162,8 +193,8 @@ function test_postgresql() {
 #-------------------------------------------------------------
 # Redis Test
 #-------------------------------------------------------------
-function test_redis() {
-    check_base
+function test_redis_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "redis:test" -f docker_dir/RedisDebianDock docker_dir/
@@ -185,8 +216,8 @@ function test_redis() {
 #-------------------------------------------------------------
 # Zookeeper Test
 #-------------------------------------------------------------
-function test_zookeeper() {
-    check_base
+function test_zookeeper_debian() {
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "zookeeper:test" -f docker_dir/ZookeeperDebianDock docker_dir/
@@ -209,7 +240,7 @@ function test_zookeeper() {
 # Debian Collectd Test
 #-------------------------------------------------------------
 function test_debian() {
-    check_base
+    check_debian_base
 
     # build env
     ${SUDO}docker build -t "app:test" -f docker_dir/UbuntuAllDock docker_dir/
@@ -237,18 +268,24 @@ mysql.docker_test nginx. zookeeper. memcached.docker_test"
 function main() {
     # building base ubuntu images
     ${SUDO}docker build -t "ubuntu:itest" -f docker_dir/UbuntuBaseDock docker_dir/
+    ${SUDO}docker build -t "centos:itest" -f docker_dir/CentosBaseDock docker_dir/
 
     ### individual test ###
-    # test_apache
-    # test_postgresql 
-    # test_redis
-    # test_cassandra
-    # test_mysql
-    # test_nginx
-    # test_zookeeper
-    # test_memcached
+    # debian test
+    # test_apache_debian
+    # test_postgresql_debian
+    # test_redis_debian
+    # test_cassandra_debian
+    # test_mysql_debian
+    # test_nginx_debian
+    # test_zookeeper_debian
+    # test_memcached_debian
+
+    # redhat test
+    # test_apache_redhat
 
     test_debian
+    echo -e "\nEnd of integration test"
 }
 
 main

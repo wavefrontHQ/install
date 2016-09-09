@@ -1,6 +1,6 @@
 ##############################################################
 # Dockerfile to build Apache env in Debian system
-# # Based on Ubuntu 14.04u
+# # Based on Ubuntu:itest
 # ############################################################
 
 FROM ubuntu:itest
