@@ -97,7 +97,7 @@ def check_dependency(os):
             conf_dir = '/etc/apache2/conf-enabled'
             app_name = 'apache2'
         elif os == config.REDHAT:
-            conf_dir = '/etc/httpd/conf.modules.d'
+            conf_dir = '/etc/httpd/conf.d'
             app_name = 'httpd'
 
         utils.print_step('Checking if ' + conf_dir + ' exists.')
@@ -122,7 +122,7 @@ def check_dependency(os):
             raise Exception(
                 '{cond_dir} dir does not exist. Manual '
                 'set up is required. For help, please '
-                'consule support@wavefront.com'.format(
+                'consult support@wavefront.com'.format(
                     conf_dir=conf_dir))
 
 

@@ -120,7 +120,7 @@ def check_app(output, app_dict):
             app_search=app_search))
     # prevent self detection
     script_re = re.compile(
-        r'root(.*)bash -c #!/bin/bash # Install Wavefront Proxy and '
+        r'root(.*)bash -c #!/bin/bash(.*)Install Wavefront Proxy and '
         'configures(.*)function logo')
 
     app_found = False
@@ -393,6 +393,7 @@ def run_installer(agent, app_dict, TEST=False):
 
     # using python -m, which requires . format instead of /
     plugin_dir = plugin_dir.replace('/', '.')
+
     Installer = getattr(
         importlib.import_module(
             '{direc}.{mod}'.format(
