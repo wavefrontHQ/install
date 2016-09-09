@@ -1,0 +1,17 @@
+##############################################################
+# Dockerfile to build Postgresql for Debian environment
+# # Based on ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+RUN apt-get -y install postgresql
+
+WORKDIR /tmp
+# initialize the user and database for testing
+ADD helpers/postgresql/init.sql /tmp/init.sql
+ADD helpers/postgresql/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

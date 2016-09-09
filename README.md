@@ -6,7 +6,7 @@ The script can be run in interactive mode, or in automatic mode by passing comma
 
 ## Interactive Mode
 ```
-sudo bash -c "$(curl -sL https://raw.githubusercontent.com/kentwang929/install/WF-PCInstaller/install.sh)"
+sudo bash -c "$(curl -sL https://raw.githubusercontent.com/kentwang929/install/WF-PCInstallerTest2/install.sh)"
 ```
 When running the script above as is, without any further command line arguments, the installer will prompt you for the following:
 

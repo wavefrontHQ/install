@@ -35,7 +35,7 @@ function usage() {
     echo "    --overwrite_collectd_config"
     echo "          Overwrite existing collectd configurations in /etc/collectd/"
     echo "    --app_configure"
-    echo "          Launch the interactive collectd plugins installer"
+    echo "          Launch the interactive plugins installer"
     echo
 }
 
@@ -59,6 +59,7 @@ PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/
 COLLECTD_PLUGINS=(
     "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
 APP_CONFIGURE_NAME="WF-PCInstaller-1.1.0dev"
+TEST_APP_CONFIGURE=""
 
 while :
 do
@@ -101,6 +102,15 @@ do
             shift
             ;;
         --app_configure)
+            APP_CONFIGURE="yes"
+            shift
+            ;;
+        --test_app_configure)
+            TEST_APP_CONFIGURE="yes"
+            INSTALL_COLLECTD="yes"
+            PROXY="localhost"
+            PROXY_PORT="4242"
+            OVERWRITE_COLLECTD_CONFIG="yes"
             APP_CONFIGURE="yes"
             shift
             ;;
@@ -876,22 +886,31 @@ EOF
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/431284/WF-PCInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/464761/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
         if [ ! -d "/tmp/${APP_CONFIGURE_NAME}" ]; then
             mkdir -p /tmp/${APP_CONFIGURE_NAME}
         fi
-        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/${APP_CONFIGURE_NAME} >>${INSTALL_LOG} 2>&1
+        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/ >>${INSTALL_LOG} 2>&1
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to extract configuration files"
         fi
         echo_success
         if command_exists python; then
-            APP_DIR="/tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME"
+            APP_DIR="/tmp/$APP_CONFIGURE_NAME"
             cd $APP_DIR
-            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} COLLECTD ${APP_DIR} ${INSTALL_LOG}
+            if [ "$TEST_APP_CONFIGURE" == "yes" ]; then
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} \
+                --log_file ${INSTALL_LOG} "--TEST" "--debug"
+            else
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} --log_file ${INSTALL_LOG}
+            fi
             if [ "$?" == 0 ]; then
                 APP_FINISHED="yes"
             fi
@@ -924,7 +943,7 @@ fi
 
 if [ "$APP_CONFIGURE" == "yes" ]; then
     echo "To restart WF-CDPInstaller"
-    echo "Navigate to /tmp/$APP_CONFIGURE_NAME/$APP_CONFIGURE_NAME and type"
+    echo "Navigate to ${APP_DIR} and type"
     echo "python -m python_installer.gather_metrics"
     echo "Restart the collectd service afterward to see the change"
 fi

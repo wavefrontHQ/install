@@ -1,5 +1,5 @@
 """
-redis-server 2.8.4 (Ubuntu 14.04)
+Tested with redis-server 2.8.4 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import common.config as config
@@ -38,7 +38,7 @@ class RedisConfigurator(inst.PluginInstaller):
         utils.print_step('Begin telegraf redis plugin installer')
 
     def check_dependency(self):
-        pass 
+        pass
 
     def collect_data(self):
         """
@@ -111,7 +111,6 @@ class RedisConfigurator(inst.PluginInstaller):
                 'Cannot obtain sample config with telegraf command')
 
         server_list_str = p_utils.json_dumps(server_list)
-          
         res = tf_utils.edit_conf(
             conf, 'servers', server_list_str)
 

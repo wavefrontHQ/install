@@ -40,36 +40,6 @@ def check_collectd_conf_dir():
         utils.call_command('mkdir ' + config.COLLECTD_CONF_DIR)
 
 
-def write_tcpconns_conf_plugin(open_ports):
-    """
-    TODO:
-    -need to check if tcpconn plugin's dependencies are installed
-    -include RemotePort for outbounds connections
-        i.e. the servers we are connecting to
-    """
-    try:
-        out = open('10-tcpconns.conf', 'w')
-    except IOError:
-        sys.stderr.write('Unable to open tcpcons.conf file\n')
-        sys.exit(1)
-    except:
-        sys.stderr.write(
-            'Unexpected error.  Unable to write tcpcons.conf file\n')
-        sys.exit(1)
-
-    tcp_plugin_bef = (
-        'LoadPlugin tcpconns\n'
-        '<Plugin "tcpconns">\n'
-        '  ListeningPorts false\n')
-
-    out.write(tcp_plugin_bef)
-    for port in open_ports:
-        out.write('  LocalPort "%d"\n' % port)
-    # no remote port yet
-    out.write('</Plugin>\n')
-    out.close()
-
-
 if __name__ == '__main__':
     utils.print_warn('This is for testing conf_collected_plugin.py')
     utils.cprint(config.COLLECTD_HOME)

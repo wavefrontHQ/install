@@ -75,7 +75,7 @@ class ApacheConfigurator(inst.PluginInstaller):
                 utils.cprint('Instance is not saved.')
 
         return data
- 
+
     def output_config(self, data, out):
         utils.print_step('Begin writing apache plugin for collectd')
         if not data:
@@ -90,7 +90,7 @@ class ApacheConfigurator(inst.PluginInstaller):
                 '  <Instance "{instance}">\n'
                 '    URL "{url}"\n'
                 '  </Instance>\n'.format(instance=instance,
-                                          url=data[instance]))
+                                         url=data[instance]))
 
         out.write('</Plugin>\n')
         return True

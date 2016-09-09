@@ -9,6 +9,7 @@ import plugin_dir.utils.nginx_utils as n_utils
 import plugin_dir.utils.plugin_utils as p_utils
 import plugin_dir.telegraf.telegraf_utils as tf_utils
 
+
 class NginxConfigurator(inst.PluginInstaller):
     def title(self):
         n_utils.title()
@@ -50,14 +51,13 @@ class NginxConfigurator(inst.PluginInstaller):
                 'Cannot obtain sample config with telegraf command')
 
         server_list_str = p_utils.json_dumps(server_list)
-          
         res = tf_utils.edit_conf(
             conf, 'urls', server_list_str)
 
         out.write(res)
         return True
 
- 
+
 if __name__ == '__main__':
     nginx = NginxConfigurator(
         'DEBIAN', 'COLLECTD', 'nginx', 'wavefront_nginx.conf')

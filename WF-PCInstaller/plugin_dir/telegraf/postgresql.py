@@ -1,5 +1,5 @@
 """
-postgresql 9.3 (Ubuntu 14.04)
+Tested with postgresql 9.3 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import plugin_dir.plugin_installer as inst

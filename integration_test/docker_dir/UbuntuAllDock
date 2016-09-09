@@ -1,0 +1,164 @@
+##############################################################
+# Dockerfile to build applications to test one line installer
+# in Debian system
+# Based on Ubuntu 14.04u
+# ############################################################
+
+#-------------------------------------------------------------
+# General Setting
+#-------------------------------------------------------------
+FROM ubuntu:itest
+WORKDIR /tmp
+ADD helpers/ubuntu_app/init.sh init.sh
+RUN chmod +x init.sh
+
+### Java installation ###
+# to run add-apt-repository
+RUN apt-get -y install software-properties-common python-software-properties
+
+# prepare to install java
+RUN add-apt-repository ppa:webupd8team/java
+
+# update for java
+RUN apt-get update
+
+# http://askubuntu.com/questions/190582/installing-java-automatically-with-silent-option
+# skip oracle agreement
+RUN echo debconf shared/accepted-oracle-license-v1-1 select true | \
+	debconf-set-selections
+RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | \
+	debconf-set-selections
+
+# install java
+RUN apt-get -y install oracle-java8-set-default
+
+
+#-------------------------------------------------------------
+# Apache Setting
+#-------------------------------------------------------------
+RUN apt-get -y install apache2
+# extendedstatus is needed to enable detail metrics for server-status
+ADD helpers/apache/extendedstatus.conf /etc/apache2/conf-enabled
+RUN sed -i '/\<VirtualHost .*:[0-9]*\>/a \<Location \/server-status\>\n\  \
+	    SetHandler server-status\n\<\/Location\>\n' \
+	    /etc/apache2/sites-available/000-default.conf
+
+
+#-------------------------------------------------------------
+# MySQL Setting
+#-------------------------------------------------------------
+RUN echo 'mysql-server mysql-server/root_password password root' | \
+    debconf-set-selections
+RUN echo 'mysql-server mysql-server/root_password_again password root' | \
+    debconf-set-selections
+
+RUN apt-get -y install mysql-server
+RUN mysql_install_db
+
+# initialize 
+ADD helpers/mysql/init.sql /tmp/mysql/init.sql
+
+
+#-------------------------------------------------------------
+# Nginx Setting
+#-------------------------------------------------------------
+RUN apt-get -y install nginx
+
+# enable server-status
+RUN sed -i '/listen 80 default_server;/a location \/server-status{\n\
+    stub_status on;\n  access_log off;\n  allow 127.0.0.1;}\n' \
+    /etc/nginx/sites-available/default
+
+# change the port to 81 to prevent conflict with apache
+RUN sed -i 's/listen 80 default_server;/listen 81 default_server;/' \
+    /etc/nginx/sites-available/default
+
+RUN sed -i \
+    's/listen \[::\]:80 default/listen \[::\]:81 default/' \
+    /etc/nginx/sites-available/default
+
+
+#-------------------------------------------------------------
+# Postgresql Setting
+#-------------------------------------------------------------
+RUN apt-get -y install postgresql
+
+# initialize the user and database for testing
+ADD helpers/postgresql/init.sql /tmp/postgresql/init.sql
+
+
+#-------------------------------------------------------------
+# Redis Setting
+#-------------------------------------------------------------
+RUN apt-get update
+RUN apt-get -y install wget
+RUN apt-get -y install build-essential
+
+# instructions from redis.io/download
+RUN wget http://download.redis.io/releases/redis-3.2.3.tar.gz
+RUN tar xzf redis-3.2.3.tar.gz
+WORKDIR /tmp/redis-3.2.3
+RUN make
+WORKDIR /tmp
+
+#-------------------------------------------------------------
+# Cassandra Setting
+#-------------------------------------------------------------
+# obtain cassandra from apache website by creating a repo
+RUN echo "deb http://www.apache.org/dist/cassandra/debian \
+          37x main" | sudo tee -a \
+	  /etc/apt/sources.list.d/cassandra.sources.list
+
+# add secure key for cassandra
+RUN gpg --keyserver pgp.mit.edu --recv-keys 749D6EEC0353B12C
+RUN gpg --export --armor 749D6EEC0353B12C | sudo apt-key add -
+
+# update cassandra repo
+RUN apt-get update
+
+# install cassandra
+RUN apt-get -y install cassandra
+
+# fix collectd java.so dependency issue
+RUN echo "/usr/lib/jvm/java-8-oracle/jre/lib/amd64/server/" | \
+	tee /etc/ld.so.conf.d/java.conf
+RUN ldconfig
+
+
+#-------------------------------------------------------------
+# Memcached Setting
+#-------------------------------------------------------------
+RUN apt-get -y install build-essential
+RUN apt-get -y install libevent-dev
+
+RUN wget https://memcached.org/files/memcached-1.4.31.tar.gz
+RUN tar -zxf memcached-1.4.31.tar.gz
+WORKDIR /tmp/memcached-1.4.31
+RUN ./configure && make && sudo make install
+
+WORKDIR /tmp
+
+#-------------------------------------------------------------
+# Zookeeper Setting
+#-------------------------------------------------------------
+# install zookeeper
+RUN wget http://mirrors.sonic.net/apache/zookeeper/zookeeper-3.4.8/zookeeper-3.4.8.tar.gz
+RUN tar -xzf zookeeper-3.4.8.tar.gz
+
+WORKDIR /tmp/zookeeper-3.4.8
+# set up configuration
+RUN echo "tickTime=2000" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "dataDir=/var/zookeeper" | sudo tee -a \
+       conf/zoo.cfg
+RUN echo "clientPort=2181" | sudo tee -a \
+       conf/zoo.cfg
+
+WORKDIR /tmp
+
+
+#-------------------------------------------------------------
+# Testing scripts
+#-------------------------------------------------------------
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

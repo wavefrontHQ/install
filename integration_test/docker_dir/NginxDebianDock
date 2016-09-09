@@ -1,0 +1,30 @@
+##############################################################
+# Dockerfile to build Nginx env in Debian system
+# Based on Ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+RUN apt-get -y install nginx
+
+# enable server-status
+RUN sed -i '/listen 80 default_server;/a location \/server-status{\n\
+    stub_status on;\n  access_log off;\n  allow 127.0.0.1;}\n' \
+    /etc/nginx/sites-available/default
+
+# change the port to 81
+RUN sed -i 's/listen 80 default_server;/listen 81 default_server;/' \
+    /etc/nginx/sites-available/default
+
+RUN sed -i \
+    's/listen \[::\]:80 default/listen \[::\]:81 default/' \
+    /etc/nginx/sites-available/default
+
+WORKDIR /tmp
+
+# initialize 
+ADD helpers/nginx/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

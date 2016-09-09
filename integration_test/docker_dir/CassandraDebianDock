@@ -1,0 +1,49 @@
+##############################################################
+# Dockerfile to build Cassandra for Debian environment
+# # Based on ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+# to run add-apt-repository
+RUN apt-get -y install software-properties-common python-software-properties
+
+# prepare to install java
+RUN add-apt-repository -y ppa:webupd8team/java
+
+# obtain cassandra from apache website by creating a repo
+RUN echo "deb http://www.apache.org/dist/cassandra/debian \
+          37x main" | sudo tee -a \
+	  /etc/apt/sources.list.d/cassandra.sources.list
+
+# add secure key for cassandra
+RUN gpg --keyserver pgp.mit.edu --recv-keys 749D6EEC0353B12C
+RUN gpg --export --armor 749D6EEC0353B12C | sudo apt-key add -
+
+# update for java and cassandra
+RUN apt-get update
+
+# http://askubuntu.com/questions/190582/installing-java-automatically-with-silent-option
+# skip oracle agreement
+RUN echo debconf shared/accepted-oracle-license-v1-1 select true | \
+	debconf-set-selections
+RUN echo debconf shared/accepted-oracle-license-v1-1 seen true | \
+	debconf-set-selections
+
+# install java
+RUN apt-get -y install oracle-java8-set-default
+
+# install cassandra
+RUN apt-get -y install cassandra
+
+# fix collectd java.so dependency issue
+RUN echo "/usr/lib/jvm/java-8-oracle/jre/lib/amd64/server/" | \
+	tee /etc/ld.so.conf.d/java.conf
+RUN ldconfig
+
+WORKDIR /tmp
+ADD helpers/cassandra/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

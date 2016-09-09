@@ -1,5 +1,5 @@
 """
-mysql  Ver 14.14 Distrib 5.5.49 (Ubuntu 14.04)
+Tested with mysql  Ver 14.14 Distrib 5.5.49 (Ubuntu 14.04)
 """
 import re
 
@@ -145,19 +145,19 @@ class MySQLConfigurator(inst.PluginInstaller):
             res = utils.ask('Is the above information correct?')
 
             if res:
-                  utils.print_step('Saving instance')
-                  db_list.append(db)
-                  data[db] = {
-                      "username": username,
-                      "password": password,
-                      "host": host,
-                  }
-                  if remote:
-                      data[db]['port'] = port
-                      server_list.append((host, port))
-                  else:
-                      data[db]['socket'] = socket
-                  utils.print_success()
+                utils.print_step('Saving instance')
+                db_list.append(db)
+                data[db] = {
+                    "username": username,
+                    "password": password,
+                    "host": host,
+                }
+                if remote:
+                    data[db]['port'] = port
+                    server_list.append((host, port))
+                else:
+                    data[db]['socket'] = socket
+                utils.print_success()
             else:
                 utils.cprint('This instance will not be saved.')
 
@@ -233,5 +233,7 @@ class MySQLConfigurator(inst.PluginInstaller):
 
 
 if __name__ == '__main__':
-    sql = MySQLInstaller('DEBIAN', 'mysql', 'wavefront_mysql.conf')
+    sql = MySQLConfigurator(
+        'DEBIAN', 'COLLECTD', 'mysql', 'wavefront_mysql.conf')
+    config.INSTALL_LOG = '/dev/stdout'
     sql.install()

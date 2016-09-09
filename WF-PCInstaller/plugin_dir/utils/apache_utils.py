@@ -1,3 +1,6 @@
+"""
+Common functions for apache found between collectd and telegraf configurators
+"""
 import re
 
 import common.install_utils as utils
@@ -61,7 +64,7 @@ def check_dependency(os):
             utils.print_success()
         else:
             utils.print_success()
-            
+
     elif os == config.REDHAT:
         utils.cprint()
         utils.cprint(
@@ -97,7 +100,7 @@ def check_dependency(os):
             conf_dir = '/etc/apache2/conf-enabled'
             app_name = 'apache2'
         elif os == config.REDHAT:
-            conf_dir = '/etc/httpd/conf.modules.d'
+            conf_dir = '/etc/httpd/conf.d'
             app_name = 'httpd'
 
         utils.print_step('Checking if ' + conf_dir + ' exists.')
@@ -122,7 +125,7 @@ def check_dependency(os):
             raise Exception(
                 '{cond_dir} dir does not exist. Manual '
                 'set up is required. For help, please '
-                'consule support@wavefront.com'.format(
+                'consult support@wavefront.com'.format(
                     conf_dir=conf_dir))
 
 

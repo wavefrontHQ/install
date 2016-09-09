@@ -1,5 +1,5 @@
 """
-zookeeper 3.4.8 (Ubuntu 14.04)
+Tested with zookeeper 3.4.8 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import plugin_dir.plugin_installer as inst
@@ -33,7 +33,6 @@ class ZookeeperConfigurator(inst.PluginInstaller):
 
     def check_dependency(self):
         pass
-
 
     def collect_data(self):
         """
@@ -88,7 +87,7 @@ class ZookeeperConfigurator(inst.PluginInstaller):
                 'Cannot obtain sample config with telegraf command')
 
         server_list_str = p_utils.json_dumps(server_list)
-          
+
         res = tf_utils.edit_conf(
             conf, 'servers', server_list_str)
 

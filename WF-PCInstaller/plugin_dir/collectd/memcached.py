@@ -1,5 +1,5 @@
 """
-memcached 1.4.14 (Ubuntu 14.04)
+Tested with memcached 1.4.14 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import common.config as config
@@ -115,6 +115,6 @@ class MemcachedConfigurator(inst.PluginInstaller):
 
 if __name__ == '__main__':
     mc = MemcachedInstaller(
-        'DEBIAN', 'memcached', 'wavefront_memcached.conf')
+        'DEBIAN', 'COLLECTD', 'memcached', 'wavefront_memcached.conf')
     config.INSTALL_LOG = '/dev/stdout'
     mc.install()

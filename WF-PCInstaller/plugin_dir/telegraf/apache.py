@@ -9,6 +9,7 @@ import plugin_dir.utils.apache_utils as a_utils
 import plugin_dir.utils.plugin_utils as p_utils
 import plugin_dir.telegraf.telegraf_utils as tf_utils
 
+
 class ApacheConfigurator(inst.PluginInstaller):
     def title(self):
         a_utils.title()
@@ -57,7 +58,7 @@ class ApacheConfigurator(inst.PluginInstaller):
 
         out.write(res)
         return count
- 
+
 if __name__ == '__main__':
     apache = ApacheConfigurator(
         'DEBIAN', 'COLLECTD', 'apache', 'wavefront_apache.conf')

@@ -2,17 +2,14 @@
 """
 The main module file that will be invoked by the one line installer.
 
-Usage: gather_metrics [operating system(DEBIAN|REDHAT)] [agent
-(COLLECTD|TELEGRAF)] [APP_DIR] [log file] -TEST
-
-If log file is provided, then errors will be logged to such file.
-Otherwise, all errors will be flushed.
+check usage in main()
+or
+python -m python_installer.gather_metrics -h
 
 It first checks the dependency this module needs.
 Detects application and calls the appropriate plugin installer.
 Catches ctrl+c, which exits the system with return code of 1.
 """
-
 import socket
 import sys
 from datetime import datetime
@@ -20,6 +17,7 @@ import re
 import importlib
 import json
 import collections
+import argparse
 
 import common.conf_collectd_plugin as conf
 import common.install_utils as utils
@@ -34,9 +32,23 @@ INSTALLED = 0
 
 
 def usage():
+    """ Deprecated
+    deprecated by argparse module
+    """
     utils.cprint(
         "Usage: gather_metrics [operating system(DEBIAN|REDHAT)] "
-        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file]")
+        "[agent(COLLECTD|TELEGRAF)] [APP_DIR] [log file] [-TEST]\n"
+        "operating system:\n"
+        "    Determines the installer control flow.\n"
+        "agent:\n"
+        "    Determines the directory path.\n"
+        "app_dir:\n"
+        "    The location of WF-PCInstaller where setup.py resides.\n"
+        "log_file:\n"
+        "    Errors will log to this file.\n"
+        "-TEST:\n"
+        "    Installs all detected applications with default setting.\n"
+        "    This is for integeration test.  Default is off.\n")
 
 
 def check_version():
@@ -80,32 +92,55 @@ def port_scan(host, port):
 
 def check_app(output, app_dict):
     """
-    return true if the app exists
+    Input:
+        output string:
+            the result of ps -ef
+        app_dict {}:
+            the dictionary that hold's the app's information.
+            This is reading from support_plugins.json
 
-    checks if the keyword from support_plugins can be matched
-    in ps -ef output.
-    if not, check if the command matches
+    Output:
+        return true if the app is running
 
-    Note: lax search, but user has potentially more options 
-    to pick installers
+    Description:
+        checks if the keyword from support_plugins can be matched
+        in ps -ef output.
+        if not, check if the command matches
+
+        Note: lax search, but user has potentially more options
+        to pick installers
+
     """
     app_search = app_dict['app_search']
     app_cmds = app_dict['command'].split('|')
 
-#    app_re = re.search(
-#        r' ({app_search})\n'.format(
-#            app_search=app_search), output.decode())
+    # lax app search
+    app_re = re.compile(
+        r'({app_search})'.format(
+            app_search=app_search))
+    # prevent self detection
+    script_re = re.compile(
+        r'root(.*)bash -c #!/bin/bash(.*)Install Wavefront Proxy and '
+        'configures(.*)function logo')
 
+    app_found = False
     for line in output.decode().split('\n'):
-        app_re = re.search(
-            r'({app_search})'.format(
-                app_search=app_search), line)
-        if app_re is not None:
-            if config.DEBUG:
-                utils.eprint(line)
-            return True
+        self_res = script_re.match(line)
 
-    if app_re is None:
+        if self_res is None:
+            app_found = app_re.search(line)
+            if app_found is not None:
+                if config.DEBUG:
+                    utils.eprint(line)
+                return True
+        else:
+            if config.DEBUG:
+                utils.eprint(
+                    'Detected self with match:\n{}'.format(
+                        self_res.group()))
+
+    # check command if app is not found running
+    if app_found is None:
         for cmd in app_cmds:
             if config.DEBUG:
                 utils.eprint('Command: {}'.format(cmd))
@@ -137,12 +172,20 @@ def detect_used_ports():
 
 def detect_applications():
     """
-    Detect and install appropriate collectd plugin
+    Detect applications and provide the appropriate plugin information
 
-    This function uses unix command ps -ef and check whether
-    the supported application is found.
+    Description:
+        This function uses unix command ps -ef and check whether
+        the supported application is found.
+        Check current plugin support in support_plugin.json
 
-    Check current plugin support in support_plugin.json
+    Input:
+        None
+    Output:
+        support_list []:
+            the list of supported plugins that were detected
+        support_dict {}
+            the dictionary associated with each supported plugin
     """
 
     plugins_file = config.PLUGINS_FILE_PATH
@@ -157,16 +200,22 @@ def detect_applications():
     except (IOError, OSError) as e:
         utils.exit_with_message(e)
     except Exception as e:
-        utils.exit_with_message('Unexpected error: {}.'.format(e))
+        utils.exit_with_message(
+            'Cannot read support_plugins.json.\n'
+            'Unexpected error: {}.'.format(e))
 
     try:
         data = json.load(data_file)
+    except Exception as e:
+        utils.cprint(
+            'Improper JSON format.\n'
+            'Error: {}'.format(e))
     finally:
         data_file.close()
 
     data = data['data']
 
-    plugin_dict = collections.OrderedDict(data['plugins'])
+    plugin_dict = data['plugins']
     support_dict = {}
     support_list = []
 
@@ -180,7 +229,7 @@ def detect_applications():
     if len(support_list):
         return (support_list, support_dict)
     else:
-        utils.cprint('No supported app plugin is detected')
+        utils.eprint('No supported app plugin is detected.')
         sys.exit(0)
 
 
@@ -188,8 +237,15 @@ def installer_menu(app_list, support_dict):
     """
     provide the menu and prompts for the user to interact with the installer
 
-    app_list: list of app detected that has support plugin
-    support_dict: dict that associates with each app in app_list
+    Input:
+        app_list []:
+            list of app detected that plugin support
+        support_dict {}:
+            dict that associates with each app in app_list
+
+    Output:
+        count int:
+            the number of successful installation
 
     installer flow:
       1. show selections
@@ -197,10 +253,11 @@ def installer_menu(app_list, support_dict):
       3. updates install state
       4. menu changes with install state
 
+    Sample menu:
     Option  Name                 State      Date
-    (1)     mysql Installer      Installed  (installation date)
-    (2)     apache Installer     Incomplete
-    (3)     postgres Installer   New
+    (1)     mysql                Installed  (installation date)
+    (2)     apache               Incomplete
+    (3)     postgres             New
 
     if resinstall,
       warn that this will overwrite {conf_file}.
@@ -223,12 +280,12 @@ def installer_menu(app_list, support_dict):
     utils.cprint()
     utils.cprint(
         'We have detected the following applications that are '
-        'supported by our collectd installers.')
+        'supported by our configurators.')
 
     while res not in exit_cmd:
         utils.cprint()
         utils.cprint(
-            'The following are the available installers:')
+            'The following are the available configurators:')
 
         utils.cprint(
             menu_rowf.format(
@@ -240,11 +297,11 @@ def installer_menu(app_list, support_dict):
         # install_state_dict contains other agents' state as well
         install_state_dict = check_install_state(app_list)
         install_state = install_state_dict[config.AGENT]
-        
+
         for i, app in enumerate(app_list):
             # formatted string for menu
             index = '({i})'.format(i=i)
-            app_installer = '{} installer'.format(app)
+            app_installer = '{app}'.format(app=app)
             app_state = install_state[app]['state']
 
             if 'date' in install_state[app]:
@@ -271,12 +328,13 @@ def installer_menu(app_list, support_dict):
 
         utils.cprint()
         utils.cprint(
-            'To pick a installer, type in the corresponding number '
-            'next to the installer.\n'
+            'To pick a configurator, type in the corresponding number '
+            'next to the configurator.\n'
             'To quit out of this installer, type "[Q]uit" or "exit".')
         res = utils.get_input(
             'Which installer would you like to run?').lower()
         if res not in exit_cmd:
+            # check if option is within the array list
             option = check_option(res, len(app_list))
 
             if option is not None:
@@ -288,12 +346,12 @@ def installer_menu(app_list, support_dict):
                 app_state = install_state[app]['state']
                 if app_state == INSTALLED:
                     utils.print_warn(
-                        'You have previously used this installer\n'
+                        'You have previously used this configurator\n'
                         'Reinstalling will overwrite the old configuration '
                         'file, {}.'.format(app_dict['conf_name']))
                 confirm = utils.ask(
                     'Would you like to proceed with '
-                    'the installer?')
+                    'the configurator?')
                 if confirm:
                     if run_installer(config.AGENT, app_dict):
                         install_state[app]['state'] = INSTALLED
@@ -309,13 +367,32 @@ def installer_menu(app_list, support_dict):
     return count
 
 
-def run_installer(agent, app_dict):
+def run_installer(agent, app_dict, TEST=False):
+    """
+    Based on the app selected, instantiate and run the
+    configurator.
+
+    Input:
+        agent string:
+            the collecter chosen for installer
+        app_dict {}:
+            the dict containing the app's information
+        TEST bool:
+            used for integration testing
+    Output:
+    """
+    # pick directory based on agent
     if agent == config.COLLECTD:
         plugin_dir = config.COLLECTD_PLUGIN_DIR
     elif agent == config.TELEGRAF:
         plugin_dir = config.TELEGRAF_PLUGIN_DIR
 
+    if TEST:
+        plugin_dir += "/test"
+
+    # using python -m, which requires . format instead of /
     plugin_dir = plugin_dir.replace('/', '.')
+
     Installer = getattr(
         importlib.import_module(
             '{direc}.{mod}'.format(
@@ -329,14 +406,42 @@ def run_installer(agent, app_dict):
         app_dict['conf_name'])
 
     return instance.install()
- 
+
+
+def test_installer(app_list, support_dict):
+    """
+    run each detected app with the test installer
+
+    Input:
+        app_list []:
+            list of app detected that plugin support
+        support_dict {}:
+            dict that associates with each app in app_list
+
+    Side-effect:
+        append module with '_test'
+        prepend conf_name with 'test_'
+        append class_name with 'Test'
+    """
+    for app in app_list:
+        app_dict = support_dict[app]
+        test_conf = 'test_{0}'.format(app_dict['conf_name'])
+        app_dict['conf_name'] = test_conf
+        app_dict['module'] += '_test'
+        app_dict['class_name'] += 'Test'
+        run_installer(config.AGENT, support_dict[app], TEST=True)
+
 
 def check_install_state(app_list):
     """
     check the state of each installer
 
-    Given: a list of app name
-    return: a dict of app_name and their states
+    Input:
+        app_list []:
+            a list of app name
+    Output:
+        install_state {}:
+            a dict of app_name and their states
 
     Flow:
      - check file path exists
@@ -374,10 +479,15 @@ def check_install_state(app_list):
 
     try:
         data = json.load(install_file)
+    except Exception as e:
+        utils.eprint(
+            'Invalid json format.'
+            'Error: {}'.format(e))
     finally:
         install_file.close()
+
     install_state = data['data']
-    # create an empty dictionary if key not found
+    # create an empty dictionary for the app if key not found
     if config.AGENT not in install_state:
         install_state[config.AGENT] = {}
 
@@ -393,6 +503,15 @@ def check_install_state(app_list):
 def update_install_state(agent, app_state_dict):
     """
     update the app state by modifying the json file
+
+    Input:
+        agent string:
+            the agent chosen for the collector
+        app_state_dict {}:
+            dict that contains the app state
+
+    Description:
+        update the app_state and write to install_state.json
     """
     comment = {
           "standard_format": "see below",
@@ -403,6 +522,8 @@ def update_install_state(agent, app_state_dict):
               }
           }
     }
+
+    # to keep order upon writing the dictionary
     json_content = collections.OrderedDict()
     json_content['_comment'] = comment
     json_content.update({'data': app_state_dict})
@@ -433,6 +554,15 @@ def update_install_state(agent, app_state_dict):
 def check_option(option, max_length):
     """
     check if option is a num or if it is out of range
+
+    Input:
+        option string:
+            the option number in string
+        max_length:
+            the max length of the array
+    Output:
+        res int:
+            option string to int
     """
     res = utils.string_to_num(option)
     if res is None:
@@ -442,33 +572,90 @@ def check_option(option, max_length):
         return None
     return res
 
-if __name__ == '__main__':
-    check_version()
-    conf.check_collectd_exists()
-    conf.check_collectd_path()
 
-    # the first argument will be the log file
-    arg_len = len(sys.argv)
-    if arg_len == 5:
-        config.OPERATING_SYSTEM = sys.argv[1]
-        config.AGENT = sys.argv[2]
-        config.APP_DIR = sys.argv[3]
-        config.INSTALL_LOG = sys.argv[4]
-    else:
-        utils.eprint('Invalid arguments.')
-        usage()
-        sys.exit(1)
+def main():
+    """
+    Provides usage guide and prompt the user for choice of installers
+    """
+    check_version()
+
+    parser = argparse.ArgumentParser(
+        prog='python -m python_installer.gather_metrics',
+        description='Python Configuration Installer')
+    # os arg
+    parser.add_argument(
+        '--os',
+        choices=['DEBIAN', 'REDHAT'],
+        required=True,
+        help='Operating system (DEBIAN|REDHAT)',
+        metavar='(DEBIAN|REDHAT)')
+
+    # agent arg
+    parser.add_argument(
+        '--agent',
+        choices=['COLLECTD', 'TELEGRAF'],
+        required=True,
+        help='Agent (COLLECTD|TELEGRAF)',
+        metavar='(COLLECTD|TELEGRAF)')
+
+    # app_dir
+    parser.add_argument(
+        '--app_dir',
+        required=True,
+        help='The location of WF-PCInstaller where setup.py resides.')
+
+    # log_file
+    parser.add_argument(
+        '--log_file',
+        required=True,
+        help='Errors will be logged to this file.')
+
+    # debug
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='Turn debug flag on.')
+
+    # --TEST
+    parser.add_argument(
+        '--TEST',
+        action='store_true',
+        default=False,
+        help='Installs all detected applications with default setting.\n'
+        'This is for integeration test.  Default is false.')
+
+    args = parser.parse_args()
+    config.OPERATING_SYSTEM = args.os
+    config.AGENT = args.agent
+    config.APP_DIR = args.app_dir
+    config.INSTALL_LOG = args.log_file
+    config.DEBUG = args.debug
+    config.TEST = args.TEST
+
+    if config.AGENT == config.COLLECTD:
+        conf.check_collectd_exists()
+        conf.check_collectd_path()
 
     if config.DEBUG:
         utils.print_warn('DEBUG IS ON')
 
-    (s_list, s_dict) = detect_applications()
+    (app_list, app_dict) = detect_applications()
 
     try:
-        if installer_menu(s_list, s_dict):
-            sys.exit(0)
+        if config.TEST:
+            test_installer(app_list, app_dict)
         else:
-            sys.exit(1)
+            # if at least one installer is ran to completion,
+            # then exit with success
+            if installer_menu(app_list, app_dict):
+                sys.exit(0)
+            else:
+                sys.exit(1)
     except KeyboardInterrupt:
         utils.eprint('\nQuitting the installer via keyboard interrupt.')
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

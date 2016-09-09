@@ -1,0 +1,25 @@
+##############################################################
+# Dockerfile to build Redis Debian env
+# # Based on ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+WORKDIR /tmp
+
+RUN apt-get update
+RUN apt-get -y install build-essential
+
+# instructions from redis.io/download
+RUN wget http://download.redis.io/releases/redis-3.2.3.tar.gz
+RUN tar xzf redis-3.2.3.tar.gz
+WORKDIR /tmp/redis-3.2.3
+RUN make
+WORKDIR /tmp
+
+# initialize the user and database for testing
+ADD helpers/redis/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

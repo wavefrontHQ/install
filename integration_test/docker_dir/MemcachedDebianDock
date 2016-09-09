@@ -1,0 +1,24 @@
+##############################################################
+# Dockerfile to build Memcached Debian env
+# # Based on ubuntu:itest
+# ############################################################
+
+FROM ubuntu:itest
+
+WORKDIR /tmp
+
+RUN apt-get update
+RUN apt-get -y install build-essential
+RUN apt-get -y install libevent-dev
+
+RUN wget https://memcached.org/files/memcached-1.4.31.tar.gz
+RUN tar -zxf memcached-1.4.31.tar.gz
+WORKDIR /tmp/memcached-1.4.31
+RUN ./configure && make && sudo make install
+
+WORKDIR /tmp
+ADD helpers/memcached/init.sh init.sh
+RUN chmod +x init.sh
+
+ADD test_script/plugin_tester.py plugin_tester.py
+ADD test_script/test.sh	test.sh

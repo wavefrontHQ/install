@@ -1,0 +1,26 @@
+##############################################################
+# Base Dockerfile to build images off from to test plugins
+# # Based on centos:6
+# ############################################################
+
+from centos:6
+RUN yum -y install wget
+
+# preparing to install python 2.7
+RUN yum -y groupinstall "Development tools"
+RUN yum install -y zlib-dev openssl-devel sqlite-devel bzip2-devel ez-libs
+
+# extracting python 2.7
+WORKDIR /tmp
+RUN wget http://www.python.org/ftp/python/2.7.6/Python-2.7.6.tar.xz
+RUN xz -d Python-2.7.6.tar.xz
+RUN tar -xvf Python-2.7.6.tar
+WORKDIR /tmp/Python-2.7.6
+# replacing default python with python 2.7
+RUN ./configure && make && make install
+WORKDIR /tmp
+
+
+
+
+
