@@ -14,16 +14,16 @@ class MySQLConfiguratorTest(
         Prompt the user for information, and guide them through the plugin
 
         data = {
-            "db": {
-                "username": username,
-                "password": password,
-                "host": host,
-                "port or socket":
+            'db': {
+                'username': username,
+                'password': password,
+                'host': host,
+                'port or socket':
             }
         }
         """
         data = {
-            "docker_test": {
+            'docker_test': {
                 'username': 'docker',
                 'password': 'docker',
                 'host': 'localhost',

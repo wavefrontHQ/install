@@ -1,5 +1,5 @@
 """
-redis-server 2.8.4 (Ubuntu 14.04)
+Tested with redis-server 2.8.4 (Ubuntu 14.04)
 """
 import common.install_utils as utils
 import common.config as config

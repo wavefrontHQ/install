@@ -1,5 +1,5 @@
 """
-cassandra 3.7.0 (Ubuntu 14.04)
+Tested with cassandra 3.7.0 (Ubuntu 14.04)
 """
 import re
 

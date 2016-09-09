@@ -255,9 +255,9 @@ def installer_menu(app_list, support_dict):
 
     Sample menu:
     Option  Name                 State      Date
-    (1)     mysql Installer      Installed  (installation date)
-    (2)     apache Installer     Incomplete
-    (3)     postgres Installer   New
+    (1)     mysql                Installed  (installation date)
+    (2)     apache               Incomplete
+    (3)     postgres             New
 
     if resinstall,
       warn that this will overwrite {conf_file}.
@@ -280,12 +280,12 @@ def installer_menu(app_list, support_dict):
     utils.cprint()
     utils.cprint(
         'We have detected the following applications that are '
-        'supported by our collectd installers.')
+        'supported by our configurators.')
 
     while res not in exit_cmd:
         utils.cprint()
         utils.cprint(
-            'The following are the available installers:')
+            'The following are the available configurators:')
 
         utils.cprint(
             menu_rowf.format(
@@ -301,7 +301,7 @@ def installer_menu(app_list, support_dict):
         for i, app in enumerate(app_list):
             # formatted string for menu
             index = '({i})'.format(i=i)
-            app_installer = '{} installer'.format(app)
+            app_installer = '{app} configurator'.format(app=app)
             app_state = install_state[app]['state']
 
             if 'date' in install_state[app]:

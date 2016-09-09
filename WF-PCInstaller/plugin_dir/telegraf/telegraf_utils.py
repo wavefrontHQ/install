@@ -37,7 +37,7 @@ def edit_conf(conf, key, value):
     use regex substitute key = (old value)
     with the supplied key = value
     """
-       
+
     # regex search for key
     search_re = re.compile(
         r'{key} = '.format(key=key), re.I)

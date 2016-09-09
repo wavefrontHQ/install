@@ -14,7 +14,8 @@ class CassandraConfiguratorTest(
         data = {
             'url': url
         }
-        # ServiceURL "service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi"
+        base serviceurl
+            'service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi'
         """
         data = {
             'url': 'service:jmx:rmi:///jndi/rmi://localhost:7199/jmxrmi'

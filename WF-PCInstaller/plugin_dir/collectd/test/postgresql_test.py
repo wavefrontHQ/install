@@ -21,12 +21,12 @@ class PostgresqlConfiguratorTest(
         }
         """
         data = {
-            "docker_test": {
-                "db": "docker",
-                "host": "localhost",
-                "port": "5432",
-                "username": "docker",
-                "password": "docker"
+            'docker_test': {
+                'db': 'docker',
+                'host': 'localhost',
+                'port': '5432',
+                'username': 'docker',
+                'password': 'docker'
             }
         }
 

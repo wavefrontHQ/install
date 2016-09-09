@@ -33,6 +33,6 @@ TELEGRAF_PLUGIN_DIR = 'plugin_dir/telegraf'
 
 # python installer vars
 PLUGINS_FILE = 'support_plugins.json'
-PLUGINS_FILE_PATH= 'python_installer/config/' + PLUGINS_FILE
+PLUGINS_FILE_PATH = 'python_installer/config/' + PLUGINS_FILE
 PLUGIN_CONF_DIR = 'plugin_conf'
 PLUGIN_EXTENSION_DIR = 'plugin_extension'

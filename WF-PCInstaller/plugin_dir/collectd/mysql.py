@@ -1,5 +1,5 @@
 """
-mysql  Ver 14.14 Distrib 5.5.49 (Ubuntu 14.04)
+Tested with mysql  Ver 14.14 Distrib 5.5.49 (Ubuntu 14.04)
 """
 import re
 

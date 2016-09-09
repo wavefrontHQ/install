@@ -328,7 +328,7 @@ def check_repeat(item, item_list):
             'You have already added this {}'.format(item))
         return True
     return False
-       
+
 
 def check_url_scheme(url):
     """

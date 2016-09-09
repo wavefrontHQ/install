@@ -11,14 +11,14 @@ class ApacheConfiguratorTest(
     def collect_data(self):
         """
         data = {
-            "instance_name": "url",
+            'instance_name': 'url',
         }
         """
         data = {
-            "docker_test": "http://localhost/server-status?auto"
+            'docker_test': 'http://localhost/server-status?auto'
         }
         return data
- 
+
 
 if __name__ == '__main__':
     apache = ApacheConfiguratorTest(
