@@ -780,7 +780,7 @@ EOF
         OVERWRITE_COLLECTD_CONFIG="yes"
     fi
 
-    if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+    if [[ "$OVERWRITE_COLLECTD_CONFIG" == "yes" ]]; then
         if command_exists wget; then
             FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
         elif command_exists curl; then
