@@ -715,7 +715,7 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
         echo "We recommend using Wavefront's telegraf configuration for initial setup"
         if ask "Would you like to overwrite any existing telegraf configuration? " N; then
             OVERWRITE_TELEGRAF_CONFIG="yes"
-            APP_CONFIGURE="yes"
+            APP_CONFIGURE="no"
         else
             APP_CONFIGURE="no"
             APP_FINISHED="yes"
