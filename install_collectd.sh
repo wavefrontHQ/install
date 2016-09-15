@@ -1,15 +1,15 @@
 #!/bin/bash
-# Install Wavefront Proxy and configures standard telegraf plugin
+# Install Wavefront Proxy and configures standard collectd plugin
 # ####
 
 function logo() {
     cat << "EOT"
- __      __                     _____                      __
-/  \    /  \_____ ___  __ _____/ ____\______  ____   _____/  |_
+ __      __                     _____                      __   
+/  \    /  \_____ ___  __ _____/ ____\______  ____   _____/  |_ 
 \   \/\/   /\__  \\  \/ // __ \   __\\_  __ \/  _ \ /    \   __\
- \        /  / __ \\   /\  ___/|  |   |  | \(  <_> )   |  \  |
-  \__/\  /  (____  /\_/  \___  >__|   |__|   \____/|___|  /__|
-       \/        \/          \/                         \/
+ \        /  / __ \\   /\  ___/|  |   |  | \(  <_> )   |  \  |  
+  \__/\  /  (____  /\_/  \___  >__|   |__|   \____/|___|  /__|  
+       \/        \/          \/                         \/      
 EOT
 }
 
@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --telegraf | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_telegraf_config | --app_configure ]"
+    echo "install.sh [ --proxy | --collectd | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_collectd_config | --app_configure ]"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -26,39 +26,40 @@ function usage() {
     echo "    --token <token>"
     echo "          The token to register the agent. Must have agent management permissions"
     echo
-    echo "    --telegraf"
-    echo "          Installs telegraf and configures standard metric collection"
+    echo "    --collectd"
+    echo "          Installs collectd and configures standard metric collection"
     echo "    --proxy_address <proxy_address>"
     echo "          The address of the proxy to send data to."
     echo "    --proxy_port <port>"
-    echo "          The proxy port to send telegraf data to."
-    echo "    --overwrite_telegraf_config"
-    echo "          Overwrite existing telegraf configurations in /etc/telegraf/"
+    echo "          The proxy port to send collectd data to."
+    echo "    --overwrite_collectd_config"
+    echo "          Overwrite existing collectd configurations in /etc/collectd/"
     echo "    --app_configure"
-    echo "          Launch the interactive telegraf plugins installer"
+    echo "          Launch the interactive plugins installer"
     echo
 }
 
 # Input arguments
 INSTALL_PROXY=""
-INSTALL_TELEGRAF=""
+INSTALL_COLLECTD=""
 ALLOW_HTTP=""
 SERVER=""
 TOKEN=""
 PROXY=""
 PROXY_PORT=""
-OVERWRITE_TELEGRAF_CONFIG=""
+OVERWRITE_COLLECTD_CONFIG=""
 APP_FINISHED=""
 APP_CONFIGURE=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
-TELEGRAF_WAVEFRONT_CONF_FILE=https://gist.githubusercontent.com/ezeev/435d1e7550a1ddf97fb5f3bec1385f21/raw/155144dc128fdc42a4e8bf0b9227f87475269781/telegraf.conf
-TELEGRAF_PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/telegraf/script.deb.sh"
-TELEGRAF_PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/telegraf/script.rpm.sh"
+COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
-APP_CONFIGURE_NAME="WF-CDPInstaller-1.0.0dev"
+COLLECTD_PLUGINS=(
+    "disk" "netlink" "apache" "java" "mysql" "nginx" "postgresql" "python")
+APP_CONFIGURE_NAME="WF-PCInstaller-1.1.0dev"
+TEST_APP_CONFIGURE=""
 
 while :
 do
@@ -71,8 +72,8 @@ do
             INSTALL_PROXY="yes"
             shift
             ;;
-        --telegraf)
-            INSTALL_TELEGRAF="yes"
+        --collectd)
+            INSTALL_COLLECTD="yes"
             shift
             ;;
         --allow_http)
@@ -95,12 +96,21 @@ do
             PROXY_PORT=$2
             shift 2
             ;;
-        --overwrite_telegraf_config)
-            OVERWRITE_TELEGRAF_CONFIG="yes"
+        --overwrite_collectd_config)
+            OVERWRITE_COLLECTD_CONFIG="yes"
             APP_CONFIGURE="yes"
             shift
             ;;
         --app_configure)
+            APP_CONFIGURE="yes"
+            shift
+            ;;
+        --test_app_configure)
+            TEST_APP_CONFIGURE="yes"
+            INSTALL_COLLECTD="yes"
+            PROXY="localhost"
+            PROXY_PORT="4242"
+            OVERWRITE_COLLECTD_CONFIG="yes"
             APP_CONFIGURE="yes"
             shift
             ;;
@@ -242,6 +252,12 @@ function check_if_root_or_die() {
     fi
     echo_success
 }
+
+################################################################################
+# Configuration parameters
+################################################################################
+REDHAT_REPOSITORY="http://pkg.ci.collectd.org"
+REDHAT_PUBLIC_KEY_FILE="pubkey.asc"
 
 ################################################################################
 # Other helpers
@@ -410,6 +426,23 @@ function check_fqdn() {
     fi
 }
 
+# yum_quiet_install() is a helper function that
+# that yum install the array of collectd plugins
+# $1 - arrayname
+function yum_quiet_install() {
+    local _aname=$1[@]
+    local _array=("${!_aname}")
+    for plugin in "${_array[@]}"
+    do
+        echo -e "\nyum -y -q install collectd-$plugin" >>${INSTALL_LOG}
+        yum -y install collectd-$plugin >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to install collectd-$plugin"
+        fi
+    done
+}
+
+
 # main()
 set_install_log
 
@@ -424,11 +457,11 @@ detect_architecture
 detect_operating_system
 check_fqdn
 
-if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_TELEGRAF" ]; then
+if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_COLLECTD" ]; then
     echo
     echo "Beginning interactive installation... (run with -h for flags to enable unattended installation)"
-    echo
-    echo "The Wavefront Proxy acts as a relay for telegraf, graphite and OpenTSDB telemetry data."
+    echo 
+    echo "The Wavefront Proxy acts as a relay for collectd, graphite and OpenTSDB telemetry data."
     echo "======================================================================================="
     echo
     echo "By default, it will listen to telemetry data on port 2878 in the following format:"
@@ -441,27 +474,27 @@ if [ -z "$INSTALL_PROXY" ] && [ -z "$INSTALL_TELEGRAF" ]; then
     echo
     echo "The script will install the proxy using available package managers, updates do not require the "
     echo "use of this script."
-    echo
+    echo 
     echo "Typically, you only need to install the Proxy on one machine to support an entire cluster"
     echo "of machines. If you know the address of an existing proxy and would only want to install"
-    echo "and configure telegraf on the current machine, you can skip this step."
+    echo "and configure collectd on the current machine, you can skip this step."
     echo
     if ask "Do you want to install the Wavefront Proxy?" Y; then
         INSTALL_PROXY="yes"
     fi
     echo
-    echo "telegraf Installation and Configuration"
+    echo "collectd Installation and Configuration"
     echo "======================================================================================="
     echo
-    echo "telegraf is a daemon which collects system performance statistics periodically and can be"
-    echo "configured to send the collected data to Wavefront. Telegraf is an open source project with"
-    echo "support for many plugins"
+    echo "collectd is a daemon which collects system performance statistics periodically and can be"
+    echo "configured to send the collected data to Wavefront. collectd is an open source project with"
+    echo "support for many plugins https://collectd.org/wiki/index.php/Table_of_Plugins"
     echo
-    echo "If not already installed, this script will attempt to install telegraf for your architecture."
-    echo "Otherwise, the script will attempt to configure telegraf to send data to Wavefront."
+    echo "If not already installed, this script will attempt to install collectd for your architecture."
+    echo "Otherwise, the script will attempt to configure collectd to send data to Wavefront."
     echo
-    if ask "Do you want to install and configure telegraf?" Y; then
-        INSTALL_TELEGRAF="yes"
+    if ask "Do you want to install and configure collectd?" Y; then
+        INSTALL_COLLECTD="yes"
     fi
     echo_title "Starting installation"
 else
@@ -471,7 +504,7 @@ fi
 echo_step "Preparing to Install"; echo
 
 case $OPERATING_SYSTEM in
-    DEBIAN)
+    DEBIAN)		
         #
         # Check installation tools.
         #
@@ -611,8 +644,8 @@ if [ -n "$INSTALL_PROXY" ]; then
     esac
 
     case $OPERATING_SYSTEM in
-    DEBIAN)
-        echo_step "Installing Wavefront Proxy (Debian) with token: $TOKEN for cluster at: $SERVER"; echo
+    DEBIAN)		
+        echo_step "Installing Wavefront Proxy (Debian) with token: $TOKEN for cluster at: $SERVER"; echo		
         echo_step "  Setting up Repo"
         curl -s $PACKAGE_CLOUD_DEB | bash >>${INSTALL_LOG} 2>&1
         if [ $? -ne 0 ]; then
@@ -673,7 +706,7 @@ if [ -n "$INSTALL_PROXY" ]; then
     echo_success
 fi
 
-if [ -n "$INSTALL_TELEGRAF" ]; then
+if [ -n "$INSTALL_COLLECTD" ]; then
     if [ -z "$PROXY" ]; then
         get_input "Please enter the Wavefront Proxy Address:" "localhost"
         PROXY=$user_input
@@ -685,74 +718,155 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
 
     case $OPERATING_SYSTEM in
     DEBIAN)
-        echo_step "Installing Telegraf (Debian)"; echo
-        echo_step "Setting up repository"
-        #curl -o /tmp/telegraf.deb https://dl.influxdata.com/telegraf/releases/telegraf_1.0.0-beta3_amd64.deb >>${INSTALL_LOG} 2>&1
-        curl -s $TELEGRAF_PACKAGE_CLOUD_DEB | bash >>${INSTALL_LOG} 2>&1
-        apt-get -o Dpkg::Options::="--force-confold" install telegraf >>${INSTALL_LOG} 2>&1
-        echo_success
+        echo_step "Installing CollectD (Debian)"; echo
+        echo_step "  Installing software-properties-common"
+        apt-get install software-properties-common -qq >>${INSTALL_LOG} 2>&1
         if [ $? -ne 0 ]; then
-            exit_with_failure "Failed to do install telegraf with dpkg"
+            exit_with_message "Failed to install software-properties-common"
+        fi
+        echo_success
+        echo_step "  Adding collectd 5.5 ppa repository"
+        add-apt-repository ppa:collectd/collectd-5.5 -y >>${INSTALL_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            exit_with_message "Failed to add collectd repo ppa:collectd/collectd-5.5 to APT"
+        fi
+        echo_success
+        echo_step "  Installing collectd via apt-get"
+        apt-get update >>${INSTALL_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            echo_warning "Failed to do apt-get update, will attempt to continue"
+        fi
+        apt-get -qq -y install collectd -qq >>${INSTALL_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            exit_with_message "Failed to do install collectd with APT"
         fi
         echo_success
         ;;
     REDHAT)
-        echo_step "Installing Telegraf (RedHat)"; echo
-        echo_step "Setting up repository"
-        #curl -o /tmp/telegraf.rpm https://dl.influxdata.com/telegraf/releases/telegraf-1.0.0_beta3.x86_64.rpm >>${INSTALL_LOG} 2>&1
-        curl -s $TELEGRAF_PACKAGE_CLOUD_RPM | bash >>${INSTALL_LOG} 2>&1
-        yum install -y telegraf >>${INSTALL_LOG} 2>&1
-        echo_success
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to install telegraf with rpm"
+        if command_exists wget; then
+            FETCHER="wget --quiet"
+        elif command_exists curl; then
+            FETCHER="curl --silent -o $REDHAT_PUBLIC_KEY_FILE"
+        else
+            exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
+        echo_step "Installing CollectD (RedHat)"; echo
+        #
+        # Add yum source.
+        #	
+        echo_step "  Adding repository"
+        if [ -d /etc/yum.repos.d ]; then
+            cat > /etc/yum.repos.d/collectd-ci.repo <<EOF
+[collectd-ci]
+name=collectd CI
+baseurl=http://pkg.ci.collectd.org/rpm/collectd-5.5/epel-$CODENAME-$ARCHITECTURE
+enabled=1
+gpgkey=http://pkg.ci.collectd.org/pubkey.asc
+gpgcheck=1
+repo_gpgcheck=1
+priority=9
+EOF
+        if [[ "$CODENAME" == "5" ]]; then
+            # Collectd package for RHEL5 does not support GPG signing.
+            sed -ri '/gpg/d' /etc/yum.repos.d/collectd-ci.repo
+            echo "gpgcheck=0" >> /etc/yum.repos.d/collectd-ci.repo
+        fi
+        else
+            exit_with_failure "Package resource directory not found"
+        fi
+        echo_success
+        echo_step "  Downloading the collectd-ci repo public key"
+        echo -e "\n$FETCHER ${REDHAT_REPOSITORY}/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
+            $FETCHER ${REDHAT_REPOSITORY}/${REDHAT_PUBLIC_KEY_FILE} >>${INSTALL_LOG} 2>&1
+        if [ -s "$REDHAT_PUBLIC_KEY_FILE" ]; then
+            mkdir -p /etc/pki/rpm-gpg
+            mv ${REDHAT_PUBLIC_KEY_FILE} /etc/pki/rpm-gpg/
+            echo -e "\nrpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE}" >>${INSTALL_LOG}
+            rpm --import /etc/pki/rpm-gpg/${REDHAT_PUBLIC_KEY_FILE} >>${INSTALL_LOG} 2>&1
+            echo_success
+        else
+            exit_with_failure "Failed downloading the collectd-ci repo public key"
+        fi
+        echo_step "  Generating yum cache for collectd"
+        echo -e "\nyum -q makecache -y --disablerepo='*' --enablerepo='collectd-ci'" >>${INSTALL_LOG}
+        yum makecache -y --disablerepo='*' --enablerepo='collectd-ci' >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Cleaning yum metadata"
+        echo -e "\nyum -y -q clean metadata" >>${INSTALL_LOG}
+        yum -y clean metadata >>${INSTALL_LOG} 2>&1
+        echo_success
+        echo_step "  Installing collectd"
+        echo -e "\nyum -y -q install collectd" >>${INSTALL_LOG}
+        yum -y install collectd >>${INSTALL_LOG} 2>&1
+        if [ "$?" != 0 ]; then
+            exit_with_failure "Failed to install collectd"
+        fi
+
+        # new plugins installation
+        yum_quiet_install COLLECTD_PLUGINS
         echo_success
         ;;
     esac
 
-    if [ -z "$OVERWRITE_TELEGRAF_CONFIG" ]; then
+    if [ -z "$OVERWRITE_COLLECTD_CONFIG" ]; then
         echo
-        echo "We recommend using Wavefront's telegraf configuration for initial setup"
-        if ask "Would you like to overwrite any existing telegraf configuration? " N; then
-            OVERWRITE_TELEGRAF_CONFIG="yes"
-            APP_CONFIGURE="no"
+        echo "We recommend using Wavefront's collectd configuration for initial setup"
+        if ask "Would you like to overwrite any existing collectd configuration? " N; then
+            OVERWRITE_COLLECTD_CONFIG="yes"
+            APP_CONFIGURE="yes"
         else
             APP_CONFIGURE="no"
             APP_FINISHED="yes"
             echo
-            echo "The opentsdb output plugin should be configured to send metrics from telegraf to the Wavefront Proxy"
+            echo "The write_tsdb plugin is required to send metrics from collectd to the Wavefront Proxy"
             echo "Manual setup is required"
             echo
         fi
     fi
 
-    if [ -n "$OVERWRITE_TELEGRAF_CONFIG" ]; then
-        FETCHER="curl -L --silent -o /tmp/telegraf.conf"
-        echo_step "  Configuring telegraf"
-        $FETCHER $TELEGRAF_WAVEFRONT_CONF_FILE >>${INSTALL_LOG} 2>&1
-        echo_success
-        if [ ! -d "/etc/telegraf" ]; then
-            mkdir -p /etc/telegraf
+    if [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
+        if command_exists wget; then
+            FETCHER="wget --quiet -O /tmp/collectd_conf.tar.gz"
+        elif command_exists curl; then
+            FETCHER="curl -L --silent -o /tmp/collectd_conf.tar.gz"
+        else
+            exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
+        echo_step "  Configuring collectd"
+        $FETCHER https://github.com/kentwang929/install/files/421074/default_collectd_conf.tar.gz >>${INSTALL_LOG} 2>&1
         echo_success
-        echo_step "  Overwriting telegraf.conf"
-        mv /tmp/telegraf.conf /etc/telegraf/telegraf.conf
+        echo_step "  Extracting Configuration Files"
+        if [ ! -d "/etc/collectd" ]; then
+            mkdir -p /etc/collectd
+        fi
+        tar -xf /tmp/collectd_conf.tar.gz -C /etc/collectd >>${INSTALL_LOG} 2>&1
+            if [ "$?" != 0 ]; then
+                exit_with_failure "Failed to extract configuration files"
+            fi
         echo_success
 
-        echo_step "  Modifying Configuration File at /etc/telegraf/telegraf.conf"
+        case $OPERATING_SYSTEM in
+        REDHAT)
+            echo_step "  Overwriting collectd.conf"	
+            mv /etc/collectd.conf /etc/collectd.conf.bak
+            mv /etc/collectd/collectd.conf /etc/collectd.conf
+            echo_success
+            ;;
+        esac
+        
+        echo_step "  Modifying Configuration File at $COLLECTD_WAVEFRONT_CONF_FILE"
         # Update the configuration file
-        sed -i -e "s/PROXYHOST/$PROXY/g" /etc/telegraf/telegraf.conf
-        sed -i -e "s/PROXYPORT/$PROXY_PORT/g" /etc/telegraf/telegraf.conf
-
+        sed -ri s,Host\\s+.*$,"Host \"$PROXY\"",g $COLLECTD_WAVEFRONT_CONF_FILE
+        sed -ri s,Port\\s+.*$,"Port \"$PROXY_PORT\"",g $COLLECTD_WAVEFRONT_CONF_FILE
         echo_success
-        echo_step "  Restarting telegraf"
-        service telegraf restart >>${INSTALL_LOG} 2>&1
+        echo_step "  Restarting collectd"
+        service collectd restart >>${INSTALL_LOG} 2>&1
         echo_success
     fi
 
     if [ -z "$APP_CONFIGURE" ]; then
         echo
-        if ask "Would you like to configure telegraf plugins for your installed application(s)? " Y; then
+        if ask "Would you like to configure collectd plugins for your installed application(s)? " Y; then
             APP_CONFIGURE="yes"
         else
             echo
@@ -765,28 +879,38 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
 
     if [ "$APP_CONFIGURE" == "yes" ]; then
         if command_exists wget; then
-            FETCHER="wget --quiet -O /tmp/WF-CDPInstaller.tar.gz"
+            FETCHER="wget --quiet -O /tmp/${APP_CONFIGURE_NAME}.tar.gz"
         elif command_exists curl; then
-            FETCHER="curl -L --silent -o /tmp/WF-CDPInstaller.tar.gz"
+            FETCHER="curl -L --silent -o /tmp/${APP_CONFIGURE_NAME}.tar.gz"
         else
             exit_with_failure "Either 'wget' or 'curl' are needed"
         fi
         echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/416326/WF-CDPInstaller.tar.gz"
+        APP_LOCATION="https://github.com/kentwang929/install/files/464761/WF-PCInstaller.tar.gz"
         $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
         echo_success
         echo_step "  Extracting Configuration Files"
-        if [ ! -d "/tmp/WF-CDPInstaller" ]; then
-            mkdir -p /tmp/WF-CDPInstaller
+        if [ ! -d "/tmp/${APP_CONFIGURE_NAME}" ]; then
+            mkdir -p /tmp/${APP_CONFIGURE_NAME}
         fi
-        tar -xf /tmp/WF-CDPInstaller.tar.gz -C /tmp/WF-CDPInstaller >>${INSTALL_LOG} 2>&1
+        tar -xf /tmp/${APP_CONFIGURE_NAME}.tar.gz -C /tmp/ >>${INSTALL_LOG} 2>&1
         if [ "$?" != 0 ]; then
             exit_with_failure "Failed to extract configuration files"
         fi
         echo_success
         if command_exists python; then
-            cd /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME
-            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} ${INSTALL_LOG}
+            APP_DIR="/tmp/$APP_CONFIGURE_NAME"
+            cd $APP_DIR
+            if [ "$TEST_APP_CONFIGURE" == "yes" ]; then
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} \
+                --log_file ${INSTALL_LOG} "--TEST" "--debug"
+            else
+                python -m python_installer.gather_metrics \
+                --os ${OPERATING_SYSTEM} --agent COLLECTD \
+                --app_dir ${APP_DIR} --log_file ${INSTALL_LOG}
+            fi
             if [ "$?" == 0 ]; then
                 APP_FINISHED="yes"
             fi
@@ -798,8 +922,8 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
 fi
 
 if [ "$APP_FINISHED" == "yes" ]; then
-    echo_step "  Restarting telegraf"
-    service telegraf restart >>${INSTALL_LOG} 2>&1
+    echo_step "  Restarting collectd"
+    service collectd restart >>${INSTALL_LOG} 2>&1
     echo_success
     echo
     echo "======================================================================================="
@@ -812,14 +936,14 @@ if [ -n "$INSTALL_PROXY" ]; then
     echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 
-if [ -n "$INSTALL_TELEGRAF" ] && [ "$APP_FINISHED" == "yes" ] && [ -n "$OVERWRITE_TELEGRAF_CONFIG" ]; then
+if [ -n "$INSTALL_COLLECTD" ] && [ "$APP_FINISHED" == "yes" ] && [ -n "$OVERWRITE_COLLECTD_CONFIG" ]; then
     echo
-    echo "Telegraf has been successfully installed and configured. Check /var/log/telegraf/telegraf.log for errors regarding writing metrics to the Wavefront Proxy."
+    echo "CollectD has been successfully installed and configured. Additional configurations can be found at /etc/collectd/managed_config/. Check /var/log/collectd.log for errors regarding writing metrics to the Wavefront Proxy by grepping for write_tsdb"
 fi
 
 if [ "$APP_CONFIGURE" == "yes" ]; then
     echo "To restart WF-CDPInstaller"
-    echo "Navigate to /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME and type"
+    echo "Navigate to ${APP_DIR} and type"
     echo "python -m python_installer.gather_metrics"
-    echo "Restart the telegraf service afterward to see the change"
+    echo "Restart the collectd service afterward to see the change"
 fi
