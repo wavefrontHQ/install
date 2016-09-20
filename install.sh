@@ -689,7 +689,7 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
         echo_step "Setting up repository"
         #curl -o /tmp/telegraf.deb https://dl.influxdata.com/telegraf/releases/telegraf_1.0.0-beta3_amd64.deb >>${INSTALL_LOG} 2>&1
         curl -s $TELEGRAF_PACKAGE_CLOUD_DEB | bash >>${INSTALL_LOG} 2>&1
-        apt-get -o Dpkg::Options::="--force-confold" install telegraf >>${INSTALL_LOG} 2>&1
+        apt-get -qq -o Dpkg::Options::="--force-confold" install telegraf -y #>>${INSTALL_LOG} 2>&1
         echo_success
         if [ $? -ne 0 ]; then
             exit_with_failure "Failed to do install telegraf with dpkg"
