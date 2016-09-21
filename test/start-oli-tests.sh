@@ -1,11 +1,19 @@
 
 
-#TARGET_SCRIPT="$1"
-#API_TOKEN="$2"
-TARGET_SCRIPT="https://raw.githubusercontent.com/wavefrontHQ/install/telegraf/install.sh"
-INSTANCE="try"
-API_TOKEN="e26080f7-a26b-464b-8a0e-f1f765da6ce0"
-TEST_METRIC="cpu_usage_idle"
+#TARGET_SCRIPT="https://raw.githubusercontent.com/wavefrontHQ/install/telegraf/install.sh"
+#INSTANCE="https://try.wavefront.com"
+#API_TOKEN="e26080f7-a26b-464b-8a0e-f1f765da6ce0"
+#TEST_METRIC="cpu_usage_idle"
+
+TARGET_SCRIPT="$1"
+INSTANCE="$2"
+API_TOKEN="$3"
+TEST_METRIC="$4"
+
+echo $TARGET_SCRIPT
+echo $INSTANCE
+echo $API_TOKEN
+echo $TEST_METRIC
 
 CONTAINERS=("ubuntu1404"
   "centos6"

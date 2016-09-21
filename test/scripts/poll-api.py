@@ -19,7 +19,7 @@ argSource = sys.argv[3]
 argMetric = sys.argv[4]
 
 # Configure HOST Url: host
-wfhost = 'https://'+argCluster+'.wavefront.com'  # example : 'https://metrics.wavefront.com'
+wfhost = argCluster  # example : 'https://metrics.wavefront.com'
 
 # Configure API key authorization: api_key
 wfauth = argToken
