@@ -5,7 +5,7 @@ This is a command line tool that will run a series of one-line install tests on 
 1. It spins up containers based on each image we test on (currently ubuntu 14.04 and centos6 and centos7)
 2. Runs a script on each container instance that installs dependencies
 3. Runs one-line-install on each container with all options set (proxy AND telegraf)
-4. Polls wavefront every 30 seconds.
+4. Polls wavefront every 30 seconds, searching for the metric and source for each container.
 5. The output will print either SUCCESS or FAILURE - when all containers have reported SUCCESS - all tests have passed.
 
 If a container does not report SUCCESS after several minutes, check the logs directory. If you need to dig deeper, you can attach a shell to any running container using `docker exec -it <container name> /bin/bash` to dig deeper.
@@ -17,4 +17,12 @@ If a container does not report SUCCESS after several minutes, check the logs dir
 
 Example:
 
-./start-oli-tests.sh https://raw.githubusercontent.com/wavefrontHQ/install/telegraf/install.sh https://try.wavefront.com e26080f7-a26b-464b-8a0e-f1f765da6ce0 cpu_usage_idle
+```
+./start-oli-tests.sh https://raw.githubusercontent.com/wavefrontHQ/install/telegraf/install.sh https://try.wavefront.com YOUR_API_TOKEN cpu_usage_idle
+```
+
+Shutdown and destroy containers:
+
+```
+./stop-oli-tests.sh
+```
