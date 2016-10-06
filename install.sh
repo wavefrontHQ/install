@@ -17,7 +17,7 @@ function usage() {
     echo
     echo "USAGE"
     echo "====="
-    echo "install.sh [ --proxy | --telegraf | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --overwrite_telegraf_config | --app_configure ]"
+    echo "install.sh [ --proxy | --telegraf | --server <server_url> | --token <token> | --proxy_address <proxy_address> | --proxy_port <port> | --no_overwrite_telegraf_config ]"
     echo
     echo "    --proxy"
     echo "          Installs the Wavefront Proxy"
@@ -32,10 +32,8 @@ function usage() {
     echo "          The address of the proxy to send data to."
     echo "    --proxy_port <port>"
     echo "          The proxy port to send telegraf data to."
-    echo "    --overwrite_telegraf_config"
-    echo "          Overwrite existing telegraf configurations in /etc/telegraf/"
-    echo "    --app_configure"
-    echo "          Launch the interactive telegraf plugins installer"
+    echo "    --no_overwrite_telegraf_config"
+    echo "          Do not overwrite existing telegraf configurations in /etc/telegraf/"
     echo
 }
 
@@ -49,16 +47,14 @@ PROXY=""
 PROXY_PORT=""
 OVERWRITE_TELEGRAF_CONFIG=""
 APP_FINISHED=""
-APP_CONFIGURE=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
 CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
-TELEGRAF_WAVEFRONT_CONF_FILE=https://gist.githubusercontent.com/ezeev/435d1e7550a1ddf97fb5f3bec1385f21/raw/155144dc128fdc42a4e8bf0b9227f87475269781/telegraf.conf
+TELEGRAF_WAVEFRONT_CONF_FILE=https://gist.githubusercontent.com/ezeev/435d1e7550a1ddf97fb5f3bec1385f21/raw/66d0fe14d7d3f447d534d3da87483247986cf250/telegraf.conf
 TELEGRAF_PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/telegraf/script.deb.sh"
 TELEGRAF_PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/telegraf/script.rpm.sh"
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
-APP_CONFIGURE_NAME="WF-CDPInstaller-1.0.0dev"
 
 while :
 do
@@ -95,13 +91,8 @@ do
             PROXY_PORT=$2
             shift 2
             ;;
-        --overwrite_telegraf_config)
-            OVERWRITE_TELEGRAF_CONFIG="yes"
-            APP_CONFIGURE="yes"
-            shift
-            ;;
-        --app_configure)
-            APP_CONFIGURE="yes"
+        --no_overwrite_telegraf_config)
+            OVERWRITE_TELEGRAF_CONFIG="no"
             shift
             ;;
         --log)
@@ -711,19 +702,17 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
     esac
 
     if [ -z "$OVERWRITE_TELEGRAF_CONFIG" ]; then
-        echo
-        echo "We recommend using Wavefront's telegraf configuration for initial setup"
-        if ask "Would you like to overwrite any existing telegraf configuration? " N; then
-            OVERWRITE_TELEGRAF_CONFIG="yes"
-            APP_CONFIGURE="no"
-        else
-            APP_CONFIGURE="no"
-            APP_FINISHED="yes"
-            echo
-            echo "The opentsdb output plugin should be configured to send metrics from telegraf to the Wavefront Proxy"
-            echo "Manual setup is required"
-            echo
-        fi
+        OVERWRITE_TELEGRAF_CONFIG="yes"
+        #echo
+        #echo "We recommend using Wavefront's telegraf configuration for initial setup"
+        #if ask "Would you like to overwrite any existing telegraf configuration? " N; then
+        #    OVERWRITE_TELEGRAF_CONFIG="yes"
+        #else
+        #    echo
+        #    echo "The wavefront or opentsdb output plugin should be configured to send metrics from telegraf to the Wavefront Proxy"
+        #    echo "Manual setup is required"
+        #    echo
+        #fi
     fi
 
     if [ -n "$OVERWRITE_TELEGRAF_CONFIG" ]; then
@@ -749,77 +738,14 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
         service telegraf restart >>${INSTALL_LOG} 2>&1
         echo_success
     fi
-
-    if [ -z "$APP_CONFIGURE" ]; then
-        echo
-        if ask "Would you like to configure telegraf plugins for your installed application(s)? " Y; then
-            APP_CONFIGURE="yes"
-        else
-            echo
-            echo "Keeping the default configuration"
-            echo
-            APP_CONFIGURE="no"
-            APP_FINISHED="yes"
-        fi
-    fi
-
-    if [ "$APP_CONFIGURE" == "yes" ]; then
-        if command_exists wget; then
-            FETCHER="wget --quiet -O /tmp/WF-CDPInstaller.tar.gz"
-        elif command_exists curl; then
-            FETCHER="curl -L --silent -o /tmp/WF-CDPInstaller.tar.gz"
-        else
-            exit_with_failure "Either 'wget' or 'curl' are needed"
-        fi
-        echo_step "  Pulling application configuration file"
-        APP_LOCATION="https://github.com/kentwang929/install/files/416326/WF-CDPInstaller.tar.gz"
-        $FETCHER $APP_LOCATION >>${INSTALL_LOG} 2>&1
-        echo_success
-        echo_step "  Extracting Configuration Files"
-        if [ ! -d "/tmp/WF-CDPInstaller" ]; then
-            mkdir -p /tmp/WF-CDPInstaller
-        fi
-        tar -xf /tmp/WF-CDPInstaller.tar.gz -C /tmp/WF-CDPInstaller >>${INSTALL_LOG} 2>&1
-        if [ "$?" != 0 ]; then
-            exit_with_failure "Failed to extract configuration files"
-        fi
-        echo_success
-        if command_exists python; then
-            cd /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME
-            python -m python_installer.gather_metrics ${OPERATING_SYSTEM} ${INSTALL_LOG}
-            if [ "$?" == 0 ]; then
-                APP_FINISHED="yes"
-            fi
-        else
-            echo_warning "Python is needed to enable the app configure installation"
-        fi
-    fi
-
 fi
-
-if [ "$APP_FINISHED" == "yes" ]; then
-    echo_step "  Restarting telegraf"
-    service telegraf restart >>${INSTALL_LOG} 2>&1
-    echo_success
-    echo
-    echo "======================================================================================="
-    echo "SUCCESS"
-fi
-
 
 if [ -n "$INSTALL_PROXY" ]; then
     echo
     echo "The Wavefront Proxy has been successfully installed. To test sending a metric, open telnet to the port 2878 and type my.test.metric 10 into the terminal and hit enter. The metric should appear on Wavefront shortly. Additional configuration can be found at $CONF_FILE. A service restart is needed for configuration changes to take effect."
 fi
 
-if [ -n "$INSTALL_TELEGRAF" ] && [ "$APP_FINISHED" == "yes" ] && [ -n "$OVERWRITE_TELEGRAF_CONFIG" ]; then
+if [ -n "$INSTALL_TELEGRAF" ] && [ -n "$OVERWRITE_TELEGRAF_CONFIG" ]; then
     echo
     echo "Telegraf has been successfully installed and configured. Check /var/log/telegraf/telegraf.log for errors regarding writing metrics to the Wavefront Proxy."
-fi
-
-if [ "$APP_CONFIGURE" == "yes" ]; then
-    echo "To restart WF-CDPInstaller"
-    echo "Navigate to /tmp/WF-CDPInstaller/$APP_CONFIGURE_NAME and type"
-    echo "python -m python_installer.gather_metrics"
-    echo "Restart the telegraf service afterward to see the change"
 fi
