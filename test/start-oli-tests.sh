@@ -16,12 +16,15 @@ echo $API_TOKEN
 echo $TEST_METRIC
 
 CONTAINERS=("ubuntu1404"
+  "ubuntu1604"
   "centos6"
   "centos7")
 IMAGES=("ubuntu:14.04"
+  "ubuntu:16.04"
   "centos:centos6"
   "centos:centos7")
 OLI_SCRIPTS=("debian-one-line-install.sh"
+  "debian-one-line-install.sh"
   "rhel-one-line-install.sh"
   "rhel-one-line-install.sh")
 
