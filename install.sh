@@ -719,6 +719,9 @@ if [ -n "$INSTALL_TELEGRAF" ]; then
         FETCHER="curl -L --silent -o /tmp/telegraf.conf"
         echo_step "  Configuring telegraf"
         $FETCHER $TELEGRAF_WAVEFRONT_CONF_FILE >>${INSTALL_LOG} 2>&1
+        if [ $? -ne 0 ]; then
+            exit_with_failure "Failed to do install download Telegraf config file."
+        fi
         echo_success
         if [ ! -d "/etc/telegraf" ]; then
             mkdir -p /etc/telegraf
