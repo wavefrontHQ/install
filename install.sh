@@ -48,7 +48,7 @@ PROXY_PORT=""
 OVERWRITE_COLLECTD_CONFIG=""
 APP_BASE=wavefront
 APP_HOME=/opt/$APP_BASE/$APP_BASE-proxy
-CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
+CONF_FILE=/etc/$APP_BASE/$APP_BASE-proxy/$APP_BASE.conf
 COLLECTD_WAVEFRONT_CONF_FILE=/etc/collectd/managed_config/10-wavefront.conf
 PACKAGE_CLOUD_DEB="https://packagecloud.io/install/repositories/wavefront/proxy/script.deb.sh"
 PACKAGE_CLOUD_RPM="https://packagecloud.io/install/repositories/wavefront/proxy/script.rpm.sh"
@@ -317,7 +317,7 @@ check_if_supported() {
             ;;
         AMAZON)
         	case $CODENAME in
-        		2015.09|2015.03|2014.09|2016.03)
+        		2015.09|2015.03|2014.09|2016.03|2016.09)
         			CODENAME=6
         			;;
         		*)
@@ -639,6 +639,10 @@ if [ -n "$INSTALL_PROXY" ]; then
         echo_success
         ;;
     esac
+
+    if [[ ! -f /etc/$APP_BASE/$APP_BASE-proxy/$APP_BASE.conf ]]; then
+        CONF_FILE=$APP_HOME/conf/$APP_BASE.conf
+    fi
 
     echo_step "  Modifying Configuration File at $CONF_FILE"
     # Update the configuration file
