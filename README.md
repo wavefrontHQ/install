@@ -1,3 +1,8 @@
+> **Warning**
+>
+> VMware has ended active development of this project. this repository will no longer be updated.
+
+
 # Wavefront Proxy and Collectd Installer
 
 The Wavefront Proxy and Collectd Installer is a single script that can quickly install the tools needed to send your metrics to Wavefront.
